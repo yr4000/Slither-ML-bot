@@ -1,0 +1,20 @@
+approve_by_comment: true
+approve_regex: '^(Approved|:shipit:|:\+1:|LGTM)'
+reject_regex: '^(Rejected|:-1:)'
+reset_on_push: false
+reviewers:
+  members:
+  - ChadSki
+  - tjorim
+  - OneEyed
+  - chancity
+  - MattDuffin
+  - Drflash55
+  - ErmiyaEskandary
+  - Evanito
+  - FliiFe
+  - K00sKlust
+  - j-c-m
+  - clemens-tolboom
+  name: default
+  required: 5
