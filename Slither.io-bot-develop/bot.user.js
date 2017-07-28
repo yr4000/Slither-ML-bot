@@ -893,6 +893,12 @@ var bot = window.bot = (function() {
                 window.snake !== null && window.snake.alive_amt === 1) {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
+                console.log("pre-post");
+                $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
+                function(){
+                    console.log("entered model function.");
+                },'json');
+                console.log("post-post");
                 canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
             }
             bot.foodTimeout = undefined;
