@@ -4,6 +4,7 @@
 <script type="text/javascript">
     console.log("started script");
 // setup some JSON to use
+    //the cars var is from the original example
 var cars = [
 	{ "make":"Porsche", "model":"911S" },
 	{ "make":"Mercedes-Benz", "model":"220SE" },
@@ -21,9 +22,12 @@ window.onload = function() {
 function doWork() {
     console.log("executed doWork successfully");
 	// ajax the JSON to the server
-    var value = JSON.stringify(cars);
-    $.post("receiver", value, function(){
-
+    //var value = JSON.stringify(cars);
+    var value = JSON.stringify({"value": document.getElementById("e1").innerHTML})
+    //the following code is a JQuery syntax. the $.post sends a request to "reciever", and function(response)
+    //do something with the response, which is in a JSON format.
+    $.post("receiver", value, function(response){
+        document.getElementById("e1").innerHTML = response.result;
     }, "json");
 	// stop link reloading the page
      event.preventDefault();
@@ -31,6 +35,8 @@ function doWork() {
 console.log("ended script");
 </script>
 This will send data using AJAX to Python:<br /><br />
-<a href="" id="theButton">Click Me</a>
+<button id="theButton">Click Me</button>
+
+<p id="e1"> 1 </p>
 
 </html>

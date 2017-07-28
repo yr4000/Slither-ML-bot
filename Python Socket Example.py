@@ -4,7 +4,7 @@
 
 import sys
 
-from flask import Flask, render_template, request, redirect, Response
+from flask import Flask, render_template, request, redirect, Response,jsonify
 import random, json
 
 app = Flask(__name__)
@@ -25,17 +25,25 @@ def worker():
     print("data = "+str(data))
     if data is None:
         return "Recieved data as None"
+
+    result = int(data['value'])
+
+    #this is the example from the original guide:
+    #http://www.makeuseof.com/tag/python-javascript-communicate-json/
+    '''
     result = ''
 
     for item in data:
-        # loop over every row
-        make = str(item['make'])
-        if (make == 'Porsche'):
-            result += make + ' -- That is a good manufacturer\n'
-        else:
-            result += make + ' -- That is only an average manufacturer\n'
+    # loop over every row
+    make = str(item['make'])
+    if (make == 'Porsche'):
+        result += make + ' -- That is a good manufacturer\n'
+    else:
+        result += make + ' -- That is only an average manufacturer\n'
+    '''
 
-    return result
+    #returns a response in a json format.
+    return jsonify({"result":result+1})
 
 if __name__ == '__main__':
     # run!
