@@ -19,6 +19,12 @@ Override bot options here
 Uncomment variables you wish to change from their default values
 Changes you make here will be kept between script versions
 */
+
+var script = document.createElement('script');
+script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js';
+script.type = 'text/javascript';
+document.getElementsByTagName('head')[0].appendChild(script);
+
 var customBotOptions = {
     // target fps
     // targetFps: 30,
@@ -894,10 +900,28 @@ var bot = window.bot = (function() {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
                 console.log("pre-post");
+                $.get('http://sport5.co.il');
+                console.log("dsfsdf");
                 $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
                 function(){
                     console.log("entered model function.");
                 },'json');
+                /*
+                $.ajax({
+                    type: 'POST',
+                    url: 'https://192.168.1.102:5000/model',
+                    crossDomain: true,
+                    data: '{"some":"json"}',
+                    dataType: 'json',
+                    success: function(responseData, textStatus, jqXHR) {
+                        var value = responseData.value;
+                        console.log(value);
+                    },
+                    error: function (responseData, textStatus, errorThrown) {
+                        alert('POST failed.');
+                    }
+                });
+                */
                 console.log("post-post");
                 canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
             }
