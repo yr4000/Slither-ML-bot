@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, Response,jsonify
-#from flask_cors import CORS, cross_origin
+from flask_cors import CORS, cross_origin
 import random, json
 
 app = Flask(__name__)
-#cors = CORS(app)        #right now this doesn't help...
+cors = CORS(app)        #right now this doesn't help...
 
 
 @app.route('/')
@@ -16,7 +16,7 @@ def output():
 def ask_model():
     data = request.get_json(force=True)
     print("data recieved: "+str(data))
-    return jsonify({'value': "some response"})
+    return jsonify({'x': 100, 'y': 0})
 
 
 

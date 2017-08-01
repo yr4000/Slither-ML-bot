@@ -902,27 +902,30 @@ var bot = window.bot = (function() {
                 console.log("pre-post");
                 $.get('http://sport5.co.il');
                 console.log("dsfsdf");
-                $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
-                function(){
-                    console.log("entered model function.");
-                },'json');
                 /*
-                $.ajax({
-                    type: 'POST',
-                    url: 'https://192.168.1.102:5000/model',
-                    crossDomain: true,
-                    data: '{"some":"json"}',
-                    dataType: 'json',
-                    success: function(responseData, textStatus, jqXHR) {
-                        var value = responseData.value;
-                        console.log(value);
-                    },
-                    error: function (responseData, textStatus, errorThrown) {
-                        alert('POST failed.');
-                    }
-                });
+                $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
+                function(response){
+                    console.log("entered model function.");
+                    canvasUtil.setMouseCoordinates({x: 100, y: 0});
+                },'json');
                 */
+                $.ajax({
+                    type:    "POST",
+                    url:     'http://localhost:5000/model',
+                    data:    JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
+                    success: function(data) {
+                    console.log("entered model function.");
+                    canvasUtil.setMouseCoordinates({x: -100.0, y: 0.0});
+               },
+               // vvv---- This is the new bit
+               error:   function(jqXHR, textStatus, errorThrown) {
+               alert("Error, status = " + textStatus + ", " +
+                     "error thrown: " + errorThrown
+                    );
+                }
+            });
                 console.log("post-post");
+                //canvasUtil.setMouseCoordinates({x: -100.0, y: 0.0});
                 canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
             }
             bot.foodTimeout = undefined;
