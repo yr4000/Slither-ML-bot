@@ -16,9 +16,14 @@ def output():
 @app.route('/model',methods = ['POST'])
 def ask_model():
     data = request.get_json(force=True)
-    #print("data: " + str(data))
-    #print("Snakes: "+ str(data['snakes']))
-    #print("Foods: "+str(data['foods']))
+
+    #print("data: " + str(data) + '\n')
+    #print("Score: " + str(data['score']) + '\n')
+    #print("Snakes: "+ str(data['snakes']) + '\n')
+    #print("Foods: "+str(data['foods']) + '\n')
+    #print("Preys: " + str(data['preys']) + '\n')
+    #print("Snake: "+ str(data['snake']) + '\n')
+
     print("x: "+str(data['x']) + ", y: " + str(data['y']) + ", r: " + str(data['r']) + "\n")
     #calculate angle using r and x
     teta = math.acos(data['x']/data['r'])

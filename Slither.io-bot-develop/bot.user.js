@@ -937,7 +937,9 @@ var bot = window.bot = (function() {
             console.log('Started sendData');
             var features = {
                 snakes: window.snakes,
+                snake: window.snake,
                 foods: window.foods,
+                preys: window.preys,
                 x: bot.direction.x,
                 y: bot.direction.y,
                 r: 100
