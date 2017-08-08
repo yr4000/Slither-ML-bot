@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, Response,jsonify
 from flask_cors import CORS, cross_origin
 import random, json
+import math
 
 app = Flask(__name__)
-cors = CORS(app)        #right now this doesn't help...
+cors = CORS(app)        #This is needed for the server to be able to send responses
 
 
 @app.route('/')
@@ -15,8 +16,18 @@ def output():
 @app.route('/model',methods = ['POST'])
 def ask_model():
     data = request.get_json(force=True)
-    print("data recieved: "+str(data))
-    return jsonify({'x': 100, 'y': 0})
+    #print("data: " + str(data))
+    #print("Snakes: "+ str(data['snakes']))
+    #print("Foods: "+str(data['foods']))
+    print("x: "+str(data['x']) + ", y: " + str(data['y']) + ", r: " + str(data['r']) + "\n")
+    #calculate angle using r and x
+    teta = math.acos(data['x']/data['r'])
+    teta += math.pi/18
+    res = {}
+    res['x'] = data['r']*math.cos(teta)
+    res['y'] = data['r']*math.sin(teta)
+    print("Result: x = " + str(res['x']) + ", y = " + str(res['y']) + ", teta = " + str(teta) + "\n")
+    return jsonify(res)
 
 
 

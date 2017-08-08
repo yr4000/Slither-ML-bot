@@ -388,6 +388,7 @@ var bot = window.bot = (function() {
         MID_X: 0,
         MID_Y: 0,
         MAP_R: 0,
+        direction: {x: 0 , y: -100},
 
         getSnakeWidth: function(sc) {
             if (sc === undefined) sc = window.snake.sc;
@@ -900,19 +901,20 @@ var bot = window.bot = (function() {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
                 console.log("pre-post");
-                $.get('http://sport5.co.il');
-                console.log("dsfsdf");
+                bot.sendData();
                 /*
                 $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
                 function(response){
                     console.log("entered model function.");
-                    canvasUtil.setMouseCoordinates({x: 100, y: 0});
+                    canvasUtil.setMouseCoordinates({x: 100.0, y: 0.0});
                 },'json');
                 */
+
+                /*
                 $.ajax({
                     type:    "POST",
                     url:     'http://localhost:5000/model',
-                    data:    JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
+                    data:    JSON.stringify({x: snake.xx, y:snake.yy}),
                     success: function(data) {
                     console.log("entered model function.");
                     canvasUtil.setMouseCoordinates({x: -100.0, y: 0.0});
@@ -924,11 +926,40 @@ var bot = window.bot = (function() {
                     );
                 }
             });
+                */
                 console.log("post-post");
-                //canvasUtil.setMouseCoordinates({x: -100.0, y: 0.0});
-                canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
+                //canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));    //THIS IS THE ORIGINAL CODE!
             }
             bot.foodTimeout = undefined;
+        },
+
+        sendData: function(){
+            console.log('Started sendData');
+            var features = {
+                snakes: window.snakes,
+                foods: window.foods,
+                x: bot.direction.x,
+                y: bot.direction.y,
+                r: 100
+            };
+            console.log("Started ajax");
+            $.ajax({
+                    type:    "POST",
+                    url:     'http://localhost:5000/model',
+                    data:    JSON.stringify(features),
+                    success: function(data) {
+                        console.log("entered model function.");
+                        bot.direction = {x: data.x, y: data.y};
+                        canvasUtil.setMouseCoordinates(bot.direction);
+                    },
+               // vvv---- This is the new bit
+               error:   function(jqXHR, textStatus, errorThrown) {
+               alert("Error, status = " + textStatus + ", " +
+                     "error thrown: " + errorThrown
+                    );
+                }
+            });
+
         }
     };
 })();
