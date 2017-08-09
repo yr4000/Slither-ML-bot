@@ -18,7 +18,7 @@ def ask_model():
     data = request.get_json(force=True)
 
     #print("data: " + str(data) + '\n')
-    #print("Score: " + str(data['score']) + '\n')
+    print("Score: " + str(data['score']) + '\n')
     #print("Snakes: "+ str(data['snakes']) + '\n')
     #print("Foods: "+str(data['foods']) + '\n')
     #print("Preys: " + str(data['preys']) + '\n')

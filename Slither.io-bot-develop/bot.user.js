@@ -900,7 +900,7 @@ var bot = window.bot = (function() {
                 window.snake !== null && window.snake.alive_amt === 1) {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
-                console.log("pre-post");
+                //console.log("pre-post");
                 bot.sendData();
                 /*
                 $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
@@ -927,30 +927,32 @@ var bot = window.bot = (function() {
                 }
             });
                 */
-                console.log("post-post");
+                //console.log("post-post");
                 //canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));    //THIS IS THE ORIGINAL CODE!
             }
             bot.foodTimeout = undefined;
         },
 
+        // This function will send a vector of data to the model
         sendData: function(){
-            console.log('Started sendData');
+            //console.log('Started sendData');
             var features = {
+                score: bot.getMyScore(),
                 snakes: window.snakes,
                 snake: window.snake,
                 foods: window.foods,
-                preys: window.preys,
+                //preys: window.preys,
                 x: bot.direction.x,
                 y: bot.direction.y,
                 r: 100
             };
-            console.log("Started ajax");
+            //console.log("Started ajax");
             $.ajax({
                     type:    "POST",
                     url:     'http://localhost:5000/model',
                     data:    JSON.stringify(features),
                     success: function(data) {
-                        console.log("entered model function.");
+                        //console.log("entered model function.");
                         bot.direction = {x: data.x, y: data.y};
                         canvasUtil.setMouseCoordinates(bot.direction);
                     },
@@ -962,6 +964,18 @@ var bot = window.bot = (function() {
                 }
             });
 
+        },
+
+        //This function gets the players current score
+        //TODO: when dies, doesn't send the last score. fortunatlly there is a function here that does that (something eith get lastScore...)
+        getMyScore: function () {
+            var divMyScore = document.body.children[17];
+            if(divMyScore == undefined ||
+                divMyScore.children[0] == undefined ||
+                divMyScore.children[0].children[1] == undefined){
+                return 0;
+            }
+            return parseInt(divMyScore.children[0].children[1].innerHTML);
         }
     };
 })();
