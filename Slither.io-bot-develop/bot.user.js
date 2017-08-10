@@ -388,6 +388,8 @@ var bot = window.bot = (function() {
         MID_X: 0,
         MID_Y: 0,
         MAP_R: 0,
+
+        ML_mode: true,
         direction: {x: 0 , y: -100},
 
         getSnakeWidth: function(sc) {
@@ -900,35 +902,15 @@ var bot = window.bot = (function() {
                 window.snake !== null && window.snake.alive_amt === 1) {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
-                //console.log("pre-post");
-                bot.sendData();
-                /*
-                $.post('http://localhost:5000/model',JSON.stringify(canvasUtil.mapToMouse(window.goalCoordinates)),
-                function(response){
-                    console.log("entered model function.");
-                    canvasUtil.setMouseCoordinates({x: 100.0, y: 0.0});
-                },'json');
-                */
-
-                /*
-                $.ajax({
-                    type:    "POST",
-                    url:     'http://localhost:5000/model',
-                    data:    JSON.stringify({x: snake.xx, y:snake.yy}),
-                    success: function(data) {
-                    console.log("entered model function.");
-                    canvasUtil.setMouseCoordinates({x: -100.0, y: 0.0});
-               },
-               // vvv---- This is the new bit
-               error:   function(jqXHR, textStatus, errorThrown) {
-               alert("Error, status = " + textStatus + ", " +
-                     "error thrown: " + errorThrown
-                    );
+                if(bot.ML_mode){
+                    console.log("pre-post");
+                    bot.sendData();
+                    console.log("post-post");
                 }
-            });
-                */
-                //console.log("post-post");
-                //canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));    //THIS IS THE ORIGINAL CODE!
+                else{
+                    canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));    //THIS IS THE ORIGINAL CODE!
+                }
+
             }
             bot.foodTimeout = undefined;
         },
@@ -1197,6 +1179,14 @@ var userInterface = window.userInterface = (function() {
                     window.log('Automatic Respawning set to: ' + window.autoRespawn);
                     userInterface.savePreference('autoRespawn', window.autoRespawn);
                 }
+
+                // Letter 'M' to toggle Machine learning modes
+                if (e.keyCode === 77) {
+                    bot.ML_mode = !bot.ML_mode;
+                    window.log('Machine learning mode set to: ' + bot.ML_mode);
+                    userInterface.savePreference('MachineLearning', bot.ML_mode);
+                }
+
                 // Letter 'H' to toggle hidden mode
                 if (e.keyCode === 72) {
                     userInterface.toggleOverlays();
@@ -1335,6 +1325,7 @@ var userInterface = window.userInterface = (function() {
             oContent.push('[D] quick radius change ' +
                 bot.opt.radiusApproachSize + '/' + bot.opt.radiusAvoidSize);
             oContent.push('[I] auto respawn: ' + ht(window.autoRespawn));
+            oContent.push('[M] ML mode: ' + ht(bot.ML_mode));
             oContent.push('[G] leaderboard overlay: ' + ht(window.leaderboard));
             oContent.push('[Y] visual debugging: ' + ht(window.visualDebugging));
             oContent.push('[U] log debugging: ' + ht(window.logDebugging));
@@ -1479,6 +1470,7 @@ var userInterface = window.userInterface = (function() {
     userInterface.loadPreference('autoRespawn', false);
     userInterface.loadPreference('mobileRender', false);
     userInterface.loadPreference('leaderboard', true);
+    userInterface.loadPreference('MachineLearning', false);
     window.nick.value = userInterface.loadPreference('savedNick', 'Slither.io-bot');
 
     // Don't load saved options or apply custom options if
