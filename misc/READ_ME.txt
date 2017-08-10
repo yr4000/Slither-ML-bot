@@ -1,0 +1,1 @@
+This folder (misc) will contain unrelated files and will be deleted by the end of the project.
