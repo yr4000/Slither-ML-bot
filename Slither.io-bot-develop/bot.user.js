@@ -389,7 +389,13 @@ var bot = window.bot = (function() {
         MID_Y: 0,
         MAP_R: 0,
 
+        //This is for ML mode
         ML_mode: true,
+        //the size of each pixel in label_map is offsetSize^2
+        offsetSize: 10,
+        //The label_map size is mapSize^2
+        mapSize: 20,
+        label_map: getLabelMap(bot.offsetSize, bot.mapSize),
         direction: {x: 0 , y: -100},
 
         getSnakeWidth: function(sc) {
@@ -958,6 +964,20 @@ var bot = window.bot = (function() {
                 return 0;
             }
             return parseInt(divMyScore.children[0].children[1].innerHTML);
+        },
+
+        //creats an nXn label-map, where each pixel in it is at size offsetSize^2
+        //n MUST BE EVEN!!!
+        getLabelMap: function(offsetSize, n){
+            var res = {};
+            for( i =0; i <(Math.pow(n,2)); i++){
+                res[i] = 0;
+            }
+        },
+
+        getIndexFromXY: function(x,y){
+            head = [window.snake.xx, window.snake.yy]
+            //in process
         }
     };
 })();
