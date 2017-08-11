@@ -396,7 +396,7 @@ var bot = window.bot = (function() {
         //The label_map size is mapSize^2
         mapSize: 20,
         //label_map: bot.getLabelMap(bot.offsetSize, bot.mapSize),
-        label_map: {},
+        label_map: [],
         direction: {x: 0 , y: -100},
 
         getSnakeWidth: function(sc) {
@@ -881,7 +881,7 @@ var bot = window.bot = (function() {
             );
 
             //initialzie lable map for ML mode.
-            bot.label_map = bot.getLabelMap(bot.offsetSize, bot.mapSize);
+            bot.label_map = bot.getLabelMap(bot.mapSize);
         },
 
         // Main bot
@@ -972,16 +972,20 @@ var bot = window.bot = (function() {
 
         //creats an nXn label-map, where each pixel in it is at size offsetSize^2
         //n MUST BE EVEN!!!
-        getLabelMap: function(offsetSize, n){
+        getLabelMap: function(n){
+            return new Array(Math.pow(n,2)).fill(0);
+            /*
             var res = {};
             for( i =0; i <(Math.pow(n,2)); i++){
                 res[i] = 0;
             }
             return res;
+            */
         },
 
         //gets x and y coordinates of a point in game unit, and return the closest index
         //to it in the label_map
+        //TODO: this function can return indexes which are outside the scope, it should habdle this
         getIndexFromXY: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
