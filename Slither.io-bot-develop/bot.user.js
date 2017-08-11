@@ -980,37 +980,36 @@ var bot = window.bot = (function() {
             return res;
         },
 
-        //
+        //gets x and y coordinates of a point in game unit, and return the closest index
+        //to it in the label_map
         getIndexFromXY: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
                 bot.mapSize/2 + (Math.floor((y - head[1])/bot.offsetSize))];
             return bot.mapSize*offsets[0] + offsets[1];
-        }
-    };
+        },
 
-    var UpdateLableMapBySnakes: function(){
-        for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
-                    scPoint = undefined;
-
-                    if (window.snakes[snake].id !== window.snake.id &&
-                        window.snakes[snake].alive_amt === 1) {
-                        for (var pt = 0, pts = window.snakes[snake].pts.length; point < pts; pt++){
-
+        //Updates all the points in label_map which are close to enemy snakes
+        UpdateLableMapBySnakes: function(){
+            for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
+                scPoint = undefined;
+                if (window.snakes[snake].id !== window.snake.id &&
+                    window.snakes[snake].alive_amt === 1) {
+                    for (var pt = 0, pts = window.snakes[snake].pts.length; point < pts; pt++){
                         point = {
-                        x: window.snakes[snake].pts[pt].xx,
-                        y: window.snakes[snake].pts[pt].yy,
+                            x: window.snakes[snake].pts[pt].xx,
+                            y: window.snakes[snake].pts[pt].yy,
                         }
-
                         index = getIndexFromXY(x,y)
                         if (index >= 0 && index < 400){
                             bot.label_map[index] = -1;
                         }
-                        }
                     }
+                }
+            }
         }
-    }
 
+    };
 })();
 
 var userInterface = window.userInterface = (function() {
