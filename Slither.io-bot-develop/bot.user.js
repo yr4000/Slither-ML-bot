@@ -984,13 +984,17 @@ var bot = window.bot = (function() {
         },
 
         //gets x and y coordinates of a point in game unit, and return the closest index
-        //to it in the label_map
-        //TODO: this function can return indexes which are outside the scope, it should habdle this
+        //to it in the label_map.
+        //in case of failure returns -1;
         getIndexFromXY: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
                 bot.mapSize/2 + (Math.floor((y - head[1])/bot.offsetSize))];
-            return bot.mapSize*offsets[0] + offsets[1];
+            var index = bot.mapSize*offsets[0] + offsets[1];
+            if(index <0 || index > Math.pow(bot.mapSize,2) - 1){
+                index = -1;
+            }
+            return index;
         },
 
         //Updates all the points in label_map which are close to enemy snakes
