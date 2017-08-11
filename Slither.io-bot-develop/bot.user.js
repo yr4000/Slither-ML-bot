@@ -391,13 +391,12 @@ var bot = window.bot = (function() {
 
         //This is for ML mode
         ML_mode: true,
-        //the size of each pixel in label_map is offsetSize^2
-        offsetSize: 100,
-        //The label_map size is mapSize^2
-        mapSize: 20,
-        //label_map: bot.getLabelMap(bot.offsetSize, bot.mapSize),
-        label_map: [],
-        direction: {x: 0 , y: -100},
+        offsetSize: 100,    //the size of each pixel in label_map is offsetSize^2
+        mapSize: 20,        //The label_map size is mapSize^2
+        label_map: [],      //represent devision of the game to different sectors
+        smallAmountOfFood: 10,
+        mediumAmountOfFood: 30,
+        direction: {x: 0 , y: -100},        //TODO: for testing, delete in the end
 
         getSnakeWidth: function(sc) {
             if (sc === undefined) sc = window.snake.sc;
@@ -879,9 +878,6 @@ var bot = window.bot = (function() {
                     window.snake.lnp.xx),
                 bot.snakeWidth * bot.speedMult
             );
-
-            //initialzie lable map for ML mode.
-            bot.label_map = bot.getLabelMap(bot.mapSize);
         },
 
         // Main bot
@@ -998,7 +994,7 @@ var bot = window.bot = (function() {
         },
 
         //Updates all the points in label_map which are close to enemy snakes
-        UpdateLableMapBySnakes: function(){
+        lableMapBySnakes: function(){
             for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
                 scPoint = undefined;
                 if (window.snakes[snake].id !== window.snake.id &&
@@ -1015,7 +1011,34 @@ var bot = window.bot = (function() {
                     }
                 }
             }
+        },
+        
+        labelMapByFoods: function () {
+            //calculates the size of the foods near a point on label_map
+            for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
+                index = bot.getIndexFromXY(window.foods[i].xx,window.foods[i].yy);
+                if(index<0){
+                    continue;
+                }
+                bot.label_map[index] += window.foods[i].sz;
+            }
+            //label each point in label_map
+            for(i = 0; i<bot.label_map.length; i++){
+                if(bot.label_map[i] ==0){
+                    continue;
+                }
+                if(bot.label_map[i] < bot.smallAmountOfFood){
+                    bot.label_map[i] = 1;
+                }
+                else if(bot.label_map[i] < bot.mediumAmountOfFood){
+                    bot.label_map[i] = 2;
+                }
+                else{
+                    bot.label_map[i] = 3;
+                }
+            }
         }
+        
 
     };
 })();
@@ -1588,6 +1611,8 @@ var userInterface = window.userInterface = (function() {
     // Maintain fps
     setInterval(userInterface.framesPerSecond.fpsTimer, 80);
 
+    //initialzie lable map for ML mode.
+    bot.label_map = bot.getLabelMap(bot.mapSize);
     // Start!
     userInterface.oefTimer();
 })();
