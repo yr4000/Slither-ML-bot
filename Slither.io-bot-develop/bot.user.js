@@ -392,10 +392,11 @@ var bot = window.bot = (function() {
         //This is for ML mode
         ML_mode: true,
         //the size of each pixel in label_map is offsetSize^2
-        offsetSize: 10,
+        offsetSize: 100,
         //The label_map size is mapSize^2
         mapSize: 20,
-        label_map: getLabelMap(bot.offsetSize, bot.mapSize),
+        //label_map: bot.getLabelMap(bot.offsetSize, bot.mapSize),
+        label_map: {},
         direction: {x: 0 , y: -100},
 
         getSnakeWidth: function(sc) {
@@ -878,6 +879,9 @@ var bot = window.bot = (function() {
                     window.snake.lnp.xx),
                 bot.snakeWidth * bot.speedMult
             );
+
+            //initialzie lable map for ML mode.
+            bot.label_map = bot.getLabelMap(bot.offsetSize, bot.mapSize);
         },
 
         // Main bot
@@ -973,11 +977,15 @@ var bot = window.bot = (function() {
             for( i =0; i <(Math.pow(n,2)); i++){
                 res[i] = 0;
             }
+            return res;
         },
 
+        //
         getIndexFromXY: function(x,y){
-            head = [window.snake.xx, window.snake.yy]
-            //in process
+            var head = [window.snake.xx, window.snake.yy];
+            var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
+                bot.mapSize/2 + (Math.floor((y - head[1])/bot.offsetSize))];
+            return bot.mapSize*offsets[0] + offsets[1];
         }
     };
 })();
