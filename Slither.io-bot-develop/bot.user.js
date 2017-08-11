@@ -988,32 +988,30 @@ var bot = window.bot = (function() {
             return bot.mapSize*offsets[0] + offsets[1];
         }
     };
-})();
 
-var UpdateLableMapBySnakes: function(){
-    for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
-                scPoint = undefined;
+    var UpdateLableMapBySnakes: function(){
+        for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
+                    scPoint = undefined;
 
-                if (window.snakes[snake].id !== window.snake.id &&
-                    window.snakes[snake].alive_amt === 1) {
-                    for (var pt = 0, pts = window.snakes[snake].pts.length; point < pts; pt++){
-                    if (!window.snakes[snake].pts[pt].dying &&
-                            canvasUtil.pointInRect({
-                                x: window.snakes[snake].pts[pt].xx,
-                                y: window.snakes[snake].pts[pt].yy
-                            }, bot.sectorBox)
-                        ) {
+                    if (window.snakes[snake].id !== window.snake.id &&
+                        window.snakes[snake].alive_amt === 1) {
+                        for (var pt = 0, pts = window.snakes[snake].pts.length; point < pts; pt++){
 
-                    point = {
-                    x: window.snakes[snake].pts[pt].xx,
-                    y: window.snakes[snake].pts[pt].yy,
+                        point = {
+                        x: window.snakes[snake].pts[pt].xx,
+                        y: window.snakes[snake].pts[pt].yy,
+                        }
+
+                        index = getIndexFromXY(x,y)
+                        if (index >= 0 && index < 400){
+                            bot.label_map[index] = -1;
+                        }
+                        }
                     }
-
-                    }
-                    }
-                }
+        }
     }
-}
+
+})();
 
 var userInterface = window.userInterface = (function() {
     // Save the original slither.io functions so we can modify them, or reenable them later.
