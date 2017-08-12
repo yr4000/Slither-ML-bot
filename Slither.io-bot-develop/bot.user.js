@@ -1012,7 +1012,9 @@ var bot = window.bot = (function() {
                 }
             }
         },
-        
+
+        //Labels the label map according to nearby foods
+        //TODO: maybe (later) we should take the distance in account
         labelMapByFoods: function () {
             //calculates the size of the foods near a point on label_map
             for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
@@ -1036,6 +1038,17 @@ var bot = window.bot = (function() {
                 else{
                     bot.label_map[i] = 3;
                 }
+            }
+        },
+
+        //label label_map by selfs body.
+        labelMapBySelf: function() {
+            for(var i = 0; i < window.snake.pts.length && !window.snake.pts[i].dying; i++){
+                index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
+                if(index<0){
+                    continue;
+                }
+                bot.label_map[index] = 0;
             }
         }
         
