@@ -1042,9 +1042,10 @@ var bot = window.bot = (function() {
         },
 
         //label label_map by selfs body.
+        //TODO: adding && !window.snake.pts[i].dying to the functions mess it up. do not use it until we know what dying means.
         labelMapBySelf: function() {
-            for(var i = 0; i < window.snake.pts.length && !window.snake.pts[i].dying; i++){
-                index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
+            for(var i = 0; i < window.snake.pts.length; i++){
+                var index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
                 if(index<0){
                     continue;
                 }
