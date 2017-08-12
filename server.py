@@ -16,7 +16,8 @@ def output():
 @app.route('/model',methods = ['POST'])
 def ask_model():
     data = request.get_json(force=True)
-
+    with open('observation.json', 'w') as outfile:
+        json.dump(data, outfile)
     #print("data: " + str(data) + '\n')
     #print("Score: " + str(data['score']) + '\n')
     #print("Foods: "+str(data['foods']) + '\n')
