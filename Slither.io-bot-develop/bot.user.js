@@ -921,10 +921,10 @@ var bot = window.bot = (function() {
             bot.updateLabelMap();
             var features = {
                 input: bot.label_map,
-                /*
                 score: bot.getMyScore(),
+                snake: window.snake
+                /*
                 snakes: window.snakes,
-                snake: window.snake,
                 foods: window.foods,
                 //preys: window.preys,
                 */
@@ -955,7 +955,7 @@ var bot = window.bot = (function() {
         //This function gets the players current score
         //TODO: when dies, doesn't send the last score. fortunatlly there is a function here that does that (something with get lastScore...)
         getMyScore: function () {
-            var divMyScore = document.body.children[17];
+            var divMyScore = document.body.children[16];
             if(divMyScore == undefined ||
                 divMyScore.children[0] == undefined ||
                 divMyScore.children[0].children[1] == undefined){
