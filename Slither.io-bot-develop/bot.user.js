@@ -966,8 +966,8 @@ var bot = window.bot = (function() {
 
         //creats an nXn label-map, where each pixel in it is at size offsetSize^2
         //n MUST BE EVEN!!!
-        getLabelMap: function(n){
-            return new Array(Math.pow(n,2)).fill(0);
+        restartLabelMap: function(n){
+            bot.label_map = new Array(Math.pow(n,2)).fill(0);
             /*
             var res = {};
             for( i =0; i <(Math.pow(n,2)); i++){
@@ -993,6 +993,7 @@ var bot = window.bot = (function() {
         },
 
         updateLabelMap: function () {
+            bot.restartLabelMap(bot.mapSize);
             bot.labelMapBySelf();
             bot.labelMapByFoods();
             bot.lableMapBySnakes();
@@ -1035,7 +1036,7 @@ var bot = window.bot = (function() {
                 if(bot.label_map[i] ==0){
                     bot.label_map[i] = 0;
                 }
-                if(bot.label_map[i] < bot.smallAmountOfFood){
+                else if(bot.label_map[i] < bot.smallAmountOfFood){
                     bot.label_map[i] = 1;
                 }
                 else if(bot.label_map[i] < bot.mediumAmountOfFood){
@@ -1641,7 +1642,7 @@ var userInterface = window.userInterface = (function() {
     setInterval(userInterface.framesPerSecond.fpsTimer, 80);
 
     //initialzie lable map for ML mode.
-    bot.label_map = bot.getLabelMap(bot.mapSize);
+    bot.restartLabelMap(bot.mapSize);
     // Start!
     userInterface.oefTimer();
 })();
