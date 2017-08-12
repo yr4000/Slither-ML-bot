@@ -22,6 +22,7 @@ def ask_model():
     #print("Foods: "+str(data['foods']) + '\n')
     #print("Preys: " + str(data['preys']) + '\n')
     #print("Snake: "+ str(data['snake']) + '\n')
+    print("input: " + str(data['input']) + '\n')
 
     print("x: "+str(data['x']) + ", y: " + str(data['y']) + ", r: " + str(data['r']) + "\n")
     #calculate angle using r and x

@@ -908,28 +908,26 @@ var bot = window.bot = (function() {
                 window.snake !== null && window.snake.alive_amt === 1) {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
-                if(bot.ML_mode){
-                    console.log("pre-post");
-                    bot.sendData();
-                    console.log("post-post");
-                }
-                else{
-                    canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));    //THIS IS THE ORIGINAL CODE!
-                }
-
+                canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));    //THIS IS THE ORIGINAL CODE!
             }
             bot.foodTimeout = undefined;
         },
 
+        //---------------------------------------------from here starts ML code--------------------------------------------------
+
         // This function will send a vector of data to the model
         sendData: function(){
             //console.log('Started sendData');
+            bot.updateLabelMap();
             var features = {
+                input: bot.label_map,
+                /*
                 score: bot.getMyScore(),
                 snakes: window.snakes,
                 snake: window.snake,
                 foods: window.foods,
                 //preys: window.preys,
+                */
                 x: bot.direction.x,
                 y: bot.direction.y,
                 r: 100
@@ -955,7 +953,7 @@ var bot = window.bot = (function() {
         },
 
         //This function gets the players current score
-        //TODO: when dies, doesn't send the last score. fortunatlly there is a function here that does that (something eith get lastScore...)
+        //TODO: when dies, doesn't send the last score. fortunatlly there is a function here that does that (something with get lastScore...)
         getMyScore: function () {
             var divMyScore = document.body.children[17];
             if(divMyScore == undefined ||
@@ -987,10 +985,17 @@ var bot = window.bot = (function() {
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
                 bot.mapSize/2 + (Math.floor((y - head[1])/bot.offsetSize))];
             var index = bot.mapSize*offsets[0] + offsets[1];
+            //if index is out of boundary
             if(index <0 || index > Math.pow(bot.mapSize,2) - 1){
                 index = -1;
             }
             return index;
+        },
+
+        updateLabelMap: function () {
+            bot.labelMapBySelf();
+            bot.labelMapByFoods();
+            bot.lableMapBySnakes();
         },
 
         //Updates all the points in label_map which are close to enemy snakes
@@ -1492,7 +1497,15 @@ var userInterface = window.userInterface = (function() {
             if (window.playing && bot.isBotEnabled && window.snake !== null) {
                 window.onmousemove = function() {};
                 bot.isBotRunning = true;
-                bot.go();
+                //switch between ML mode an AI mode
+                if(bot.ML_mode){
+                    console.log("pre-post");
+                    bot.sendData();
+                    console.log("post-post");
+                }
+                else{
+                    bot.go();
+                }
             } else if (bot.isBotEnabled && bot.isBotRunning) {
                 bot.isBotRunning = false;
                 if (window.lastscore && window.lastscore.childNodes[1]) {
