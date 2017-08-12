@@ -995,17 +995,17 @@ var bot = window.bot = (function() {
 
         //Updates all the points in label_map which are close to enemy snakes
         lableMapBySnakes: function(){
+            var index = -1;
             for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
-                scPoint = undefined;
                 if (window.snakes[snake].id !== window.snake.id &&
                     window.snakes[snake].alive_amt === 1) {
-                    for (var pt = 0, pts = window.snakes[snake].pts.length; point < pts; pt++){
+                    for (var pt = 0, pts = window.snakes[snake].pts.length; pt < pts; pt++){
                         point = {
                             x: window.snakes[snake].pts[pt].xx,
-                            y: window.snakes[snake].pts[pt].yy,
-                        }
-                        index = getIndexFromXY(x,y)
-                        if (index >= 0 && index < 400){
+                            y: window.snakes[snake].pts[pt].yy
+                        };
+                        index = bot.getIndexFromXY(point.x,point.y);
+                        if (!(index < 0)){
                             bot.label_map[index] = -1;
                         }
                     }
@@ -1016,6 +1016,7 @@ var bot = window.bot = (function() {
         //Labels the label map according to nearby foods
         //TODO: maybe (later) we should take the distance in account
         labelMapByFoods: function () {
+            var index = -1;
             //calculates the size of the foods near a point on label_map
             for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
                 index = bot.getIndexFromXY(window.foods[i].xx,window.foods[i].yy);
@@ -1027,7 +1028,7 @@ var bot = window.bot = (function() {
             //label each point in label_map
             for(i = 0; i<bot.label_map.length; i++){
                 if(bot.label_map[i] ==0){
-                    continue;
+                    bot.label_map[i] = 0;
                 }
                 if(bot.label_map[i] < bot.smallAmountOfFood){
                     bot.label_map[i] = 1;
@@ -1044,8 +1045,9 @@ var bot = window.bot = (function() {
         //label label_map by selfs body.
         //TODO: adding && !window.snake.pts[i].dying to the functions mess it up. do not use it until we know what dying means.
         labelMapBySelf: function() {
+            var index = -1;
             for(var i = 0; i < window.snake.pts.length; i++){
-                var index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
+                index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
                 if(index<0){
                     continue;
                 }
