@@ -3,8 +3,6 @@ from flask_cors import CORS, cross_origin
 import random, json
 import math
 
-from utils.process_utils import process_snakes
-
 app = Flask(__name__)
 cors = CORS(app)        #This is needed for the server to be able to send responses
 
@@ -22,7 +20,7 @@ def ask_model():
     snakes_points = process_snakes(data['snakes'])
     #print("data: " + str(data) + '\n')
     #print("Score: " + str(data['score']) + '\n')
-    print("Snakes points: "+ str(snakes_points) + '\n')
+    #print("Snakes points: "+ str(snakes_points) + '\n')
     #print("Foods: "+str(data['foods']) + '\n')
     #print("Preys: " + str(data['preys']) + '\n')
     #print("Snake: "+ str(data['snake']) + '\n')
