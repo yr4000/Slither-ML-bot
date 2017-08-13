@@ -926,10 +926,10 @@ var bot = window.bot = (function() {
             var features = {
                 observation: bot.label_map,
                 score: bot.getMyScore(),
-                snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
                 update_weights: false,
                 game_over: false,
                 /*
+                snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
                 snake: window.snake,
                 snakes: window.snakes,
                 foods: window.foods,
