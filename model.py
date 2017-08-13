@@ -2,6 +2,14 @@ import tensorflow as tf
 
 OUTPUT_DIM = 8
 INPUT_DIM = 400
+SQRT_INPUT_DIM  =20 #IN ORDER TO RESHAPE INTO TENSOR
+CONV_WINDOW_SIZE = 5
+NUM_OF_CHANNELS_LAYER1 = 1
+NUM_OF_CHANNELS_LAYER2 = 16
+NUM_OF_CHANNELS_LAYER3 = 32
+SIZE_OF_FULLY_CONNECTED_LAYER = 256
+
+
 
 # TODO: what is dropout?!
 keep_rate = 0.8
@@ -22,17 +30,17 @@ def maxpool2d(x):
 
 
 def convolutional_neural_network(x):
-    weights = {'W_conv1': tf.Variable(tf.random_normal([5, 5, 1, 16])),
-               'W_conv2': tf.Variable(tf.random_normal([5, 5, 16, 32])),
-               'W_fc': tf.Variable(tf.random_normal([5 * 5 * 32, 256])),
-               'out': tf.Variable(tf.random_normal([256, OUTPUT_DIM]))}
+    weights = {'W_conv1': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2])),
+               'W_conv2': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3])),
+               'W_fc': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER])),
+               'out': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER, OUTPUT_DIM]))}
 
-    biases = {'b_conv1': tf.Variable(tf.random_normal([16])),
-              'b_conv2': tf.Variable(tf.random_normal([32])),
-              'b_fc': tf.Variable(tf.random_normal([256])),
+    biases = {'b_conv1': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER2])),
+              'b_conv2': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER3])),
+              'b_fc': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER])),
               'out': tf.Variable(tf.random_normal([OUTPUT_DIM]))}
 
-    x = tf.reshape(x, shape=[-1, 20, 20, 1])
+    x = tf.reshape(x, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
 
     conv1 = tf.nn.relu(conv2d(x, weights['W_conv1']) + biases['b_conv1'])
     conv1 = maxpool2d(conv1)
@@ -40,7 +48,7 @@ def convolutional_neural_network(x):
     conv2 = tf.nn.relu(conv2d(conv1, weights['W_conv2']) + biases['b_conv2'])
     conv2 = maxpool2d(conv2)
 
-    fc = tf.reshape(conv2, [-1, 5 * 5 * 32])
+    fc = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
     fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
     fc = tf.nn.dropout(fc, keep_rate)
 
