@@ -55,6 +55,7 @@ biases = {'b_conv1': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER2])),
           'b_conv2': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER3])),
           'b_fc': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER])),
           'out': tf.Variable(tf.random_normal([OUTPUT_DIM]))}
+
 #DEFINE feed forward computational graph
 x = tf.reshape(x, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
 
@@ -71,7 +72,7 @@ fc = tf.nn.dropout(fc, keep_rate)
 score = tf.matmul(fc, weights['out']) + biases['out']
 probability = tf.nn.softmax(score)
 
-observation = tf.placeholder(dtype=tf.float64)#TODO type
+observation = tf.placeholder(dtype=tf.float64) #TODO type
 
 #DEFINE backpropogation computational graph
 accu_reward = tf.placeholder(tf.float64,[None])
@@ -172,7 +173,7 @@ def run_model():
 
                     # Give a summary of how well our network is doing for each 10 games
                     if game_counter % 10 == 0:
-                        print("Average reward for 100 episodes {0:.2f}\t eps: {1}\t time: {2:.2f}\t LR: {3:.5f}"\
+                        print("Average reward for 10 episodes {0:.2f}\t eps: {1}\t time: {2:.2f}\t LR: {3:.5f}"\
                         .format(reward_sum/10.0, game_counter, time.time() - begining_time, curr_lr))
                         if reward_sum/10.0 > max_avg_reward:
                             cu_time = int(time.time())

@@ -922,7 +922,7 @@ var bot = window.bot = (function() {
             var features = {
                 input: bot.label_map,
                 score: bot.getMyScore(),
-                snake: window.snake,
+                snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
                 /*
                 snakes: window.snakes,
                 foods: window.foods,
