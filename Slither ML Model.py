@@ -128,7 +128,7 @@ final_vars_to_save = [hidden_1_layer['weights'],
 
 
 ##########################################################
-def run_till_done():
+def run_model():
     #trying_time = -1
     begining_time = int(time.time())
     #while True:
@@ -143,11 +143,9 @@ def run_till_done():
     all_actions = []
     all_rewards = []
     all_probs = []
-    
+
     #running_reward = None
     #saver = tf.train.Saver()
-    print("{0}, BATCH_SIZE={1}, initial_LR={2}, discount_factor={3}, layers={4}, max_eps={5}, begining_time={6}"\
-          .format(env_d, BATCH_SIZE,LR, discount_factor, LAYER_ONE, MAX_EPISODES, begining_time))
     
     with tf.Session() as sess:
         sess.run(init)
@@ -193,30 +191,29 @@ def run_till_done():
         
                 for idx,grad in enumerate(tGrad):
                     gradBuffer[idx] += grad
-                
+
+                all_observs = []
+                saved_all_reward.append(all_rewards)
+                all_rewards = []
+                saved_all_actions.append(all_actions)
+                all_actions = []
+
                 # every BATCH_SIZE episodes update the weights
-                if game_counter % BATCH_SIZE == 0: 
-                    all_observs = []
-                    saved_all_reward.append(all_rewards)
-                    all_rewards = []
-                    saved_all_actions.append(all_actions)
-                    all_actions = []
-                    
+                if game_counter % BATCH_SIZE == 0:
                     feed_dict = dict(zip(gradient_holders, gradBuffer))
                     feed_dict[global_step] = game_counter
                     curr_lr, _ = sess.run([exp_lr,updateGrads], feed_dict=feed_dict)
                     for ix,grad in enumerate(gradBuffer):
                         gradBuffer[ix] = grad * 0
-                    
-                    #pdb.set_trace()
-                    # Give a summary of how well our network is doing for each 100 episodes.
-                    if game_counter % 100 == 0:
+
+                    # Give a summary of how well our network is doing for each 10 games
+                    if game_counter % 10 == 0:
                         print("Average reward for 100 episodes {0:.2f}\t eps: {1}\t time: {2:.2f}\t LR: {3:.5f}"\
-                        .format(reward_sum/100.0, game_counter, time.time() - begining_time, curr_lr))
-                        if reward_sum/100.0 > max_avg_reward:
+                        .format(reward_sum/10.0, game_counter, time.time() - begining_time, curr_lr))
+                        if reward_sum/10.0 > max_avg_reward:
                             cu_time = int(time.time())
-                            max_avg_reward = reward_sum/100.0
-                            print("New best average reward {0:.2f}, after {1} episodes, {2} seconds".format(reward_sum/100.0, game_counter, cu_time - begining_time))
+                            max_avg_reward = reward_sum/10.0
+                            print("New best average reward {0:.2f}, after {1} games, {2} seconds".format(reward_sum/10.0, game_counter, cu_time - begining_time))
                             #saver.save(sess, r'C:\Users\carmel\Desktop\courses\adv-ml\Ex04\models\{2}\{0}_{1}'.format(end_time, reward_sum/BATCH_SIZE, env_d))
                             with open(r'{0}\{1}'.format(MODEL_PATH, begining_time), 'wb') as f:
                                 pdata = sess.run(final_vars_to_save,)
@@ -226,8 +223,8 @@ def run_till_done():
                             print(dict(zip(uni,cou*1.0/len(flat_list))))
                             
                         
-                        reward_sum = 0  
+                        reward_sum = 0
                     
-                obsrv = env.reset()
+                #TODO: maybe send singnal to start a new game
                     
-run_till_done()
+run_model()
