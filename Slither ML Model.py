@@ -12,12 +12,13 @@ REDUCE_EPISODES = 3000
 discount_factor = 0.99
 OUTPUT_DIM = 8
 INPUT_DIM = 400
-SQRT_INPUT_DIM  =20 #IN ORDER TO RESHAPE INTO TENSOR
+SQRT_INPUT_DIM = 20 #IN ORDER TO RESHAPE INTO TENSOR
 CONV_WINDOW_SIZE = 5
 NUM_OF_CHANNELS_LAYER1 = 1
 NUM_OF_CHANNELS_LAYER2 = 16
 NUM_OF_CHANNELS_LAYER3 = 32
 SIZE_OF_FULLY_CONNECTED_LAYER = 256
+MAX_GAMES = 30
 
 def discount_rewards(arr):
     """ take 1D float array of rewards and compute discounted reward """
@@ -34,9 +35,6 @@ keep_rate = 0.8
 keep_prob = tf.placeholder(tf.float32)
 
 # build the computational graph
-states = tf.placeholder(tf.int8, [None, INPUT_DIM], name='states')
-actions = tf.placeholder(tf.int8, [None, OUTPUT_DIM], name='chosen_actions')
-accu_rewards = tf.placeholder(tf.float32, [None, OUTPUT_DIM], name='accumulated_rewards')
 
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
@@ -47,59 +45,35 @@ def maxpool2d(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
-def convolutional_neural_network(x):
-    weights = {'W_conv1': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2])),
-               'W_conv2': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3])),
-               'W_fc': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER])),
-               'out': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER, OUTPUT_DIM]))}
+#DEFINE TRAINABLE VARIABLES
+weights = {'W_conv1': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2])),
+           'W_conv2': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3])),
+           'W_fc': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER])),
+           'out': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER, OUTPUT_DIM]))}
 
-    biases = {'b_conv1': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER2])),
-              'b_conv2': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER3])),
-              'b_fc': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER])),
-              'out': tf.Variable(tf.random_normal([OUTPUT_DIM]))}
+biases = {'b_conv1': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER2])),
+          'b_conv2': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER3])),
+          'b_fc': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER])),
+          'out': tf.Variable(tf.random_normal([OUTPUT_DIM]))}
+#DEFINE feed forward computational graph
+x = tf.reshape(x, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
 
-    x = tf.reshape(x, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
+conv1 = tf.nn.relu(conv2d(x, weights['W_conv1']) + biases['b_conv1'])
+conv1 = maxpool2d(conv1)
 
-    conv1 = tf.nn.relu(conv2d(x, weights['W_conv1']) + biases['b_conv1'])
-    conv1 = maxpool2d(conv1)
+conv2 = tf.nn.relu(conv2d(conv1, weights['W_conv2']) + biases['b_conv2'])
+conv2 = maxpool2d(conv2)
 
-    conv2 = tf.nn.relu(conv2d(conv1, weights['W_conv2']) + biases['b_conv2'])
-    conv2 = maxpool2d(conv2)
+fc = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
+fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
+fc = tf.nn.dropout(fc, keep_rate)
 
-    fc = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
-    fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
-    fc = tf.nn.dropout(fc, keep_rate)
-
-    score = tf.matmul(fc, weights['out']) + biases['out']
-    probability = tf.nn.softmax(score)
-    return probability
-
-
-
-'''
-observation = tf.placeholder(dtype=tf.float64)
-
-# create randomized variables for nn weights and biases
-hidden_1_layer = {'weights':tf.Variable(tf.random_normal([INPUT_DIM, LAYER_ONE], dtype='float64'), dtype='float64'),
-                  'biases':tf.Variable(tf.random_normal([LAYER_ONE], dtype='float64'), dtype='float64')}
-
-hidden_2_layer = {'weights':tf.Variable(tf.random_normal([LAYER_ONE, LAYER_TWO], dtype="float64"), dtype="float64"),
-                  'biases':tf.Variable(tf.random_normal([LAYER_TWO], dtype='float64'), dtype="float64")}
-
-
-output_layer = {'weights':tf.Variable(tf.random_normal([LAYER_TWO, OUTPUT_DIM], dtype="float64"), dtype="float64"),
-                'biases':tf.Variable(tf.random_normal([OUTPUT_DIM], dtype='float64'), dtype="float64")}
-
-l1 = tf.add(tf.matmul(observation, hidden_1_layer['weights']), hidden_1_layer['biases'])
-l1 = tf.nn.tanh(l1)
-
-l2 = tf.add(tf.matmul(l1, hidden_2_layer['weights']), hidden_2_layer['biases'])
-l2 = tf.nn.tanh(l2)
-
-score = tf.add(tf.matmul(l2, output_layer['weights']), output_layer['biases'])
+score = tf.matmul(fc, weights['out']) + biases['out']
 probability = tf.nn.softmax(score)
 
-#create the adam optimizer and all the relevant tensors it uses
+observation = tf.placeholder(dtype=tf.float64)#TODO type
+
+#DEFINE backpropogation computational graph
 accu_reward = tf.placeholder(tf.float64,[None])
 actual_acts = tf.placeholder(tf.int32,[None])
 indices = tf.range(0, tf.shape(probability)[0]) * tf.shape(probability)[1] + actual_acts
@@ -108,34 +82,25 @@ loglik = tf.log(probed_acts)
 loss = -tf.reduce_sum(tf.multiply(loglik, accu_reward))
 trainable = tf.trainable_variables()
 newGrads = tf.gradients(loss, trainable)
+
 gradient_holders = []
 for idx,var in enumerate(trainable):
     placeholder = tf.placeholder(tf.float64, name=str(idx)+'_holder')
     gradient_holders.append(placeholder)
-            
+
 global_step = tf.Variable(0, trainable=False, name='glob_step')
 exp_lr = tf.train.exponential_decay(LR, global_step, REDUCE_EPISODES, REDUCE_BASE, staircase=True)
 adam = tf.train.AdamOptimizer(exp_lr)
 updateGrads = adam.apply_gradients(zip(gradient_holders,trainable))
 
-final_vars_to_save = [hidden_1_layer['weights'],
-                      hidden_1_layer['biases'],
-                      hidden_2_layer['weights'],
-                      hidden_2_layer['biases'],
-                      output_layer['weights'],
-                      output_layer['biases']]
-'''
-
+final_vars_to_save = tf.trainable_variables()
 
 ##########################################################
 def run_model():
-    #trying_time = -1
     begining_time = int(time.time())
-    #while True:
-    #trying_time+=1
     init = tf.global_variables_initializer()
     game_counter = 0
-    max_avg_reward = -1000
+    max_avg_reward = 0
     reward_sum = 0
     saved_all_reward = []
     saved_all_actions = []
@@ -161,10 +126,8 @@ def run_model():
         #first_act = random.randint(0,OUTPUT_DIM-1)
         #prev_obsrv, reward, done, info = env.step(first_act)
         
-        while game_counter < MAX_EPISODES:
+        while game_counter < MAX_GAMES:
             # Run the policy network and get a distribution over actions
-            #if game_counter % 100 == 0:
-            #    env.render()
             action_probs = sess.run(probability, feed_dict={observation: prev_obsrv.reshape(1,INPUT_DIM)})
             # sample action from distribution
             action = np.argmax(np.random.multinomial(1, action_probs.reshape(-1)))
@@ -185,6 +148,7 @@ def run_model():
                 # size the rewards to be unit normal (helps control the gradient estimator variance)
                 discounted_rewards -= np.mean(discounted_rewards)
                 discounted_rewards //= np.std(discounted_rewards)
+                #TODO: do we need to send all_observs?
                 tGrad = sess.run(newGrads, feed_dict={observation: all_observs,\
                                                       actual_acts: all_actions,\
                                                      accu_reward: discounted_rewards})     
