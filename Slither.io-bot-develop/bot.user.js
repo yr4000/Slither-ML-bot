@@ -1059,6 +1059,23 @@ var bot = window.bot = (function() {
                 }
                 bot.label_map[index] = 0;
             }
+        },
+
+        drawNet: function(){
+            var head = [window.snake.xx, window.snake.yy];
+            for(var i = 0; i<len(bot.label_map); i++){
+                p = bot.getPointFromIndex(i,head);
+                canvasUtil.drawCircle(canvasUtil.circle(p.x, p.y,5),
+                                    'red', false);
+            }
+        },
+
+        getPointFromIndex: function (index, head) {
+            var n = Math.sqrt(bot.label_map.length,2);
+            return {
+                x: head[0] + (index%n - n/2)*bot.offsetSize,
+                y: head[1] + (n/2 - Math.floor(index/n))*bot.offsetSize
+            }
         }
         
 
@@ -1500,9 +1517,14 @@ var userInterface = window.userInterface = (function() {
                 bot.isBotRunning = true;
                 //switch between ML mode an AI mode
                 if(bot.ML_mode){
+                    /*
+                    bot.updateLabelMap();
+                    bot.drawNet();
+                    */
                     console.log("pre-post");
                     bot.sendData();
                     console.log("post-post");
+
                 }
                 else{
                     bot.go();
