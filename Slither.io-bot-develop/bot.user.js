@@ -25,6 +25,10 @@ script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js';
 script.type = 'text/javascript';
 document.getElementsByTagName('head')[0].appendChild(script);
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 var customBotOptions = {
     // target fps
     // targetFps: 30,
@@ -920,10 +924,13 @@ var bot = window.bot = (function() {
             //console.log('Started sendData');
             bot.updateLabelMap();
             var features = {
-                input: bot.label_map,
+                observation: bot.label_map,
                 score: bot.getMyScore(),
                 snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
+                update_weights: false,
+                game_over: false,
                 /*
+                snake: window.snake,
                 snakes: window.snakes,
                 foods: window.foods,
                 //preys: window.preys,
@@ -939,6 +946,8 @@ var bot = window.bot = (function() {
                     data:    JSON.stringify(features),
                     success: function(data) {
                         //console.log("entered model function.");
+                        //sleep(500);
+                        console.log(data);
                         bot.direction = {x: data.x, y: data.y};
                         canvasUtil.setMouseCoordinates(bot.direction);
                     },

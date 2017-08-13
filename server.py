@@ -23,16 +23,23 @@ def ask_model():
     #print("Foods: "+str(data['foods']) + '\n')
     #print("Preys: " + str(data['preys']) + '\n')
     #print("Snake: "+ str(data['snake']) + '\n')
-    print("input: " + str(data['input']) + '\n')
+    #print("input: " + str(data['input']) + '\n')
 
     print("x: "+str(data['x']) + ", y: " + str(data['y']) + ", r: " + str(data['r']) + "\n")
-    #calculate angle using r and x
-    teta = math.acos(data['x']/data['r'])
-    teta += math.pi/18
-    res = {}
+
+    #gets action from file
+    try:
+        with open('action.json') as json_data:
+            res = json.load(json_data)
+    except:
+        res = {}
+
+    # calculate angle using r and x
+    teta = math.acos(data['x'] / data['r'])
+    teta += math.pi / 18
     res['x'] = data['r']*math.cos(teta)
     res['y'] = data['r']*math.sin(teta)
-    print("Result: x = " + str(res['x']) + ", y = " + str(res['y']) + ", teta = " + str(teta) + "\n")
+    print(res)
     return jsonify(res)
 
 
