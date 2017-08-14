@@ -394,7 +394,7 @@ var bot = window.bot = (function() {
         MAP_R: 0,
 
         //This is for ML mode
-        MOVEMENT_OFFSET: Math.PI/4,
+        MOVEMENT_OFFSET: Math.PI/64,
         MOVEMENT_R: 100,
         ML_mode: true,
         offsetSize: 100,    //the size of each pixel in label_map is offsetSize^2
@@ -949,7 +949,6 @@ var bot = window.bot = (function() {
                     data:    JSON.stringify(features),
                     success: function(data) {
                         //console.log("entered model function.");
-                        //sleep(500);
                         console.log(data);
                         bot.move(1);
                     },
@@ -1076,14 +1075,12 @@ var bot = window.bot = (function() {
         //the angle is in radians!
         move: function(side){
             var angle = Math.atan2(bot.direction.y, bot.direction.x);
-            console.log('angle before: ' + angle);
             if(side == 1){
                 angle += bot.MOVEMENT_OFFSET;
             }
             else if(side ==2){
                 angle -= bot.MOVEMENT_OFFSET;
             }
-            console.log('angle after: ' + angle);
             bot.direction = {x: bot.MOVEMENT_R*Math.cos(angle),
                                  y: bot.MOVEMENT_R*Math.sin(angle)};
             canvasUtil.setMouseCoordinates(bot.direction);
@@ -1535,7 +1532,7 @@ var userInterface = window.userInterface = (function() {
             }
         },
 
-        oefTimer: function() {
+        oefTimer: async function() {
             var start = Date.now();
             // Original slither.io oef function + whatever is under it
             original_oef();
@@ -1551,6 +1548,7 @@ var userInterface = window.userInterface = (function() {
                     bot.updateLabelMap();
                     bot.drawNet();
                     */
+                    await sleep(50);
                     console.log("pre-post");
                     bot.sendData();
                     console.log("post-post");
