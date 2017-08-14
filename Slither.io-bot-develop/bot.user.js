@@ -394,13 +394,16 @@ var bot = window.bot = (function() {
         MAP_R: 0,
 
         //This is for ML mode
+        MOVEMENT_OFFSET: Math.PI/4,
+        MOVEMENT_R: 100,
         ML_mode: true,
         offsetSize: 100,    //the size of each pixel in label_map is offsetSize^2
         mapSize: 20,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
-        direction: {x: 0 , y: -100},        //TODO: for testing, delete in the end
+
+        direction: {x: 0 , y: -100},    //determains the direction of the bot
 
         getSnakeWidth: function(sc) {
             if (sc === undefined) sc = window.snake.sc;
@@ -948,8 +951,7 @@ var bot = window.bot = (function() {
                         //console.log("entered model function.");
                         //sleep(500);
                         console.log(data);
-                        bot.direction = {x: data.x, y: data.y};
-                        canvasUtil.setMouseCoordinates(bot.direction);
+                        bot.move(1);
                     },
                // vvv---- This is the new bit
                error:   function(jqXHR, textStatus, errorThrown) {
@@ -1070,6 +1072,25 @@ var bot = window.bot = (function() {
             }
         },
 
+        //If side == 1 move right, if side == 2 move left, else do nothing
+        //the angle is in radians!
+        move: function(side){
+            var angle = Math.atan2(bot.direction.y, bot.direction.x);
+            console.log('angle before: ' + angle);
+            if(side == 1){
+                angle += bot.MOVEMENT_OFFSET;
+            }
+            else if(side ==2){
+                angle -= bot.MOVEMENT_OFFSET;
+            }
+            console.log('angle after: ' + angle);
+            bot.direction = {x: bot.MOVEMENT_R*Math.cos(angle),
+                                 y: bot.MOVEMENT_R*Math.sin(angle)};
+            canvasUtil.setMouseCoordinates(bot.direction);
+
+        },
+
+        //VISUAL DEBUGGER code starts here
         drawNet: function(){
             var head = [window.snake.xx, window.snake.yy];
             for(var i = 0; i<len(bot.label_map); i++){
@@ -1533,7 +1554,6 @@ var userInterface = window.userInterface = (function() {
                     console.log("pre-post");
                     bot.sendData();
                     console.log("post-post");
-
                 }
                 else{
                     bot.go();
