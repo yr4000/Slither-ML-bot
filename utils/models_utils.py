@@ -29,6 +29,13 @@ def pick_random_action_manually(actions):
         res = [0 if i != index else 1 for i in range(l)]
     return res
 
+#we assume here we get the array in the right order, so each sum is indeed being multiply with the right factor
+def decrese_rewards(rewards):
+    gama = 0.99
+    dec_arr = np.array([gama**(len(rewards)-t) for t in range(len(rewards))])
+    res = np.multiply(rewards,dec_arr)
+    return res
+
 def get_observation():
     try:
         with open('observation.json') as json_data:
@@ -36,7 +43,7 @@ def get_observation():
     except:
         data = get_default_data()
     print(data)
-    return data["observation"], data["score"], data["game_over"], data["update_weights"]
+    return data["observation"], data["score"], data["game_over"]
 
 #TODO: temporary solution, need to fix
 def get_default_data():
@@ -44,9 +51,7 @@ def get_default_data():
         'observation': [0 for i in range(400)],
         'score': 0,
         'game_over': False,
-        'update_weights': False
     }
-
 
 #TODO: in case of failure send boolean
 def send_action(index):
@@ -92,12 +97,3 @@ def choose_action(index):
             'do_accelerate': True
         }
     }[index]
-
-#TODO: Those functions should be on the JS because they change the position,
-#TODO: so in case there is a delay it will keep do the action and not get stuck
-#TODO: generaly, all position calculations should be done on the client
-def move_right():
-    pass
-
-def move_left():
-    pass

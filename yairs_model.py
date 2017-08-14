@@ -13,7 +13,8 @@ NUM_OF_CHANNELS_LAYER1 = 1
 NUM_OF_CHANNELS_LAYER2 = 16
 NUM_OF_CHANNELS_LAYER3 = 32
 SIZE_OF_FULLY_CONNECTED_LAYER = 256
-MAX_GAMES = 1000
+MAX_GAMES = 100
+BATCH_SIZE = 5
 
 VAR_NO = 8
 
@@ -73,14 +74,15 @@ Gradients = tf.gradients(-loss,tvars)
 
 Gradients_holder = [tf.placeholder(tf.float32) for i in range(VAR_NO)]
 # then train the network - for each of the parameters do the GD as described in the HW.
-learning_rate = tf.placeholder(tf.float32, shape=[])
-train_step = tf.train.AdamOptimizer(learning_rate).apply_gradients(zip(Gradients_holder,tvars))
+#learning_rate = tf.placeholder(tf.float32, shape=[])   #TODO: maybe use later for oprimization of the model
+train_step = tf.train.AdamOptimizer(1e-2).apply_gradients(zip(Gradients_holder,tvars))
 
 
 #agent starts here:
 init = tf.global_variables_initializer()
 def main():
     rewards, states, actions_booleans = [], [], []
+    episode_number = 0
     game_counter = 0
 
     #variables for debugging:
@@ -91,12 +93,16 @@ def main():
 
         #TODO: load wieghts
 
-        obsrv, reward, done, update_weights = get_observation()# Obtain an initial observation of the environment
+
+        update_weights = False #if to much time passed, update the weights even if the game is not finished
         grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
 
         while game_counter < MAX_GAMES:
+            obsrv, reward, done = get_observation()  # get observation
             # append the relevant observation to folloeing action, to states
-            states.append(obsrv)
+            states.append(obsrv)        #TODO: not sure it is possible to agregate the state like this since this is not a matrix multipication
+                                        #TODO: in the model but each time we send a tensor to the model... consider ask in ML-QA/stack overflow group
+                                        #TODO: meanwhile create a model that is being updated after each observation
             # Run the policy network and get a distribution over actions
             action_probs = sess.run(actions_probs, feed_dict={observations: obsrv})
             # np.random.multinomial cause problems
@@ -115,14 +121,46 @@ def main():
             send_action(action)
             # add reward to rewards for a later use in the training step
             rewards.append(reward)
-            game_counter += 1
+            game_counter += 1  #TODO: this is for tests
 
-            obsrv, reward, done, update_weights = get_observation()  # Obtain an initial observation of the environment
+            #TODO: temporary, change to something that make sense...
+            if(game_counter % 5 ==0):
+                update_weights = True
+
+            #TODO: sleep here?
+
             if done or update_weights:
+                #UPDATE MODEL:
                 '''
-                update model
-                '''
-                pass
+                # create the rewards sums of the reversed rewards array
+                rewards_sums = np.cumsum(rewards[::-1])
+                # normalize prizes and reverse
+                rewards_sums = decrese_rewards(rewards_sums[::-1])
+                rewards_sums -= np.mean(rewards_sums)
+                rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
+                modified_rewards_sums = np.reshape(rewards_sums, [1, len(rewards_sums)])
+                # modify actions_booleans to be an array of booleans
+                actions_booleans = np.array(actions_booleans)
+                actions_booleans = actions_booleans == 1
+                # gradients for current episode
+                grads = sess.run(Gradients, feed_dict={observations: states, actions_mask: actions_booleans,
+                                                       rewards_arr: modified_rewards_sums})
+                grads_sums += np.array(grads)
+
+                episode_number += 1
+                update_weights = False
+
+                # Do the training step
+                if (episode_number % BATCH_SIZE == 0):
+                    grad_dict = {Gradients_holder[i]: grads_sums[i] for i in range(VAR_NO)}
+                    #TODO choose learning rate?
+                    # take the train step
+                    sess.run(train_step, feed_dict=grad_dict)
+                    # nullify relevant vars and updates episode number.
+                    rewards, states, actions_booleans = [], [], []
+                    manual_prob_use = 0
+                    grads_sums = get_empty_grads_sums()
+            '''
 
 main()
 

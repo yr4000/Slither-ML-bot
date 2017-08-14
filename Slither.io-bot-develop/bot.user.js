@@ -929,7 +929,6 @@ var bot = window.bot = (function() {
             var features = {
                 observation: bot.label_map,
                 score: bot.getMyScore(),
-                update_weights: false,
                 game_over: false,
                 /*
                 snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)

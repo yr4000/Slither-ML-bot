@@ -195,7 +195,7 @@ def main(argv):
             steps += 1
             if done:
                 #create the rewards sums of the reversed rewards array
-                rewards_sums = np.cumsum(rewards[::-1]);
+                rewards_sums = np.cumsum(rewards[::-1])
                 #normalize prizes and reverse
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
                 rewards_sums -= np.mean(rewards_sums)
