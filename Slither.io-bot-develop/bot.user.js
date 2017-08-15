@@ -394,7 +394,7 @@ var bot = window.bot = (function() {
         MAP_R: 0,
 
         //This is for ML mode
-        MOVEMENT_OFFSET: Math.PI/64,
+        MOVEMENT_OFFSET: Math.PI/16,    //NOTE: the larger the slices the smaller the circle will (because of the comunication speed)
         MOVEMENT_R: 100,
         ML_mode: true,
         //TODO: play with the offset, consider create width and length offsets
@@ -993,7 +993,7 @@ var bot = window.bot = (function() {
         getIndexFromXY: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
-                bot.mapSize/2 + (Math.floor((y - head[1])/bot.offsetSize))];
+                bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize))];
             var index = bot.mapSize*offsets[1] + offsets[0];
             //if index is out of boundary
             if(index <0 || index > Math.pow(bot.mapSize,2) - 1){
@@ -1023,8 +1023,6 @@ var bot = window.bot = (function() {
                         index = bot.getIndexFromXY(point.x,point.y);
                         if (!(index < 0)){
                             bot.label_map[index] = -1;
-//                                canvasUtil.drawCircle(canvasUtil.circle(point.x, point.y,5)
-//                                                                              , 'red', true);
                         }
                     }
                 }
@@ -1088,6 +1086,14 @@ var bot = window.bot = (function() {
                                  y: bot.MOVEMENT_R*Math.sin(angle)};
             canvasUtil.setMouseCoordinates(bot.direction);
 
+        },
+
+        //moves the bot in the direction of the i'th slice of a circle.
+        //this circle is indexed CLOCKWISE were 0 is 00:00 o'clock
+        setDirection: function (sliceIndex) {
+            bot.direction = {x: -bot.MOVEMENT_R*Math.cos(sliceIndex*bot.MOVEMENT_OFFSET + Math.PI/2),
+                                 y: bot.MOVEMENT_R*Math.sin(sliceIndex*bot.MOVEMENT_OFFSET - Math.PI/2)};
+            canvasUtil.setMouseCoordinates(bot.direction);
         },
 
         //VISUAL DEBUGGER code starts here
@@ -1708,6 +1714,7 @@ var userInterface = window.userInterface = (function() {
 
     //initialzie lable map for ML mode.
     bot.restartLabelMap(bot.mapSize);
+    bot.direction = {x:0, y:-100};  //TODO:this initialization should be (also) in another place
     // Start!
     userInterface.oefTimer();
 })();
