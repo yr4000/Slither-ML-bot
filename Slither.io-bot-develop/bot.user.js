@@ -397,7 +397,8 @@ var bot = window.bot = (function() {
         MOVEMENT_OFFSET: Math.PI/64,
         MOVEMENT_R: 100,
         ML_mode: true,
-        offsetSize: 100,    //the size of each pixel in label_map is offsetSize^2
+        //TODO: play with the offset, consider create width and length offsets
+        offsetSize: 40,    //the size of each pixel in label_map is offsetSize^2
         mapSize: 20,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
@@ -993,7 +994,7 @@ var bot = window.bot = (function() {
             var head = [window.snake.xx, window.snake.yy];
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
                 bot.mapSize/2 + (Math.floor((y - head[1])/bot.offsetSize))];
-            var index = bot.mapSize*offsets[0] + offsets[1];
+            var index = bot.mapSize*offsets[1] + offsets[0];
             //if index is out of boundary
             if(index <0 || index > Math.pow(bot.mapSize,2) - 1){
                 index = -1;
@@ -1003,7 +1004,7 @@ var bot = window.bot = (function() {
 
         updateLabelMap: function () {
             bot.restartLabelMap(bot.mapSize);
-            bot.labelMapBySelf();
+            //bot.labelMapBySelf();
             bot.labelMapByFoods();
             bot.lableMapBySnakes();
         },
@@ -1091,6 +1092,7 @@ var bot = window.bot = (function() {
 
         //VISUAL DEBUGGER code starts here
         drawNet: function(){
+            //var localMap = bot.label_map;
             var head = [window.snake.xx, window.snake.yy];
             for(var i = 0; i < bot.label_map.length; i++){
                 var p = bot.getPointFromIndex(i,head);
