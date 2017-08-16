@@ -1,14 +1,16 @@
-import tensorflow as tf
-import numpy as np
 import pickle as pkl
 import math
 
 from utils.models_utils import *
+#TODO: I am not sure if there is a problem here with the Qt thing or not
+import matplotlib
+matplotlib.use('Qt4Agg')
 
-OUTPUT_DIM = 6
+OUTPUT_DIM = 64
 INPUT_DIM = 400
 SQRT_INPUT_DIM  =20 #IN ORDER TO RESHAPE INTO TENSOR
-CONV_WINDOW_SIZE = 5
+PLN = 2                     #Pool Layers Number
+CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
 NUM_OF_CHANNELS_LAYER2 = 16
 NUM_OF_CHANNELS_LAYER3 = 32
@@ -29,35 +31,42 @@ def maxpool2d(x):
     #                        size of window         movement of window
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
+def InitializeVarXavier(var_name,var_shape):
+    return tf.get_variable(name=var_name, shape=var_shape, dtype= tf.float32,
+                    initializer=tf.contrib.layers.xavier_initializer())
 
-observations = tf.placeholder(tf.float32, [INPUT_DIM]) #TODO: is tne None needed?
+initialize = InitializeVarXavier
+
+
+observations = tf.placeholder(tf.float32, [None,INPUT_DIM])
 #trainable variables
-weights = {'W_conv1': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2])),
-           'W_conv2': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3])),
-           'W_fc': tf.Variable(tf.random_normal([CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER])),
-           'out': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER, OUTPUT_DIM]))}
+weights = {'W_conv1': initialize('wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2]),
+           'W_conv2':  initialize('wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3]),
+           'W_fc': initialize('wfc',[CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER]),
+           'out': initialize('wo',[SIZE_OF_FULLY_CONNECTED_LAYER, OUTPUT_DIM])}
 
-biases = {'b_conv1': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER2])),
-          'b_conv2': tf.Variable(tf.random_normal([NUM_OF_CHANNELS_LAYER3])),
-          'b_fc': tf.Variable(tf.random_normal([SIZE_OF_FULLY_CONNECTED_LAYER])),
-          'out': tf.Variable(tf.random_normal([OUTPUT_DIM]))}
+biases = {'b_conv1': initialize('bc1', [NUM_OF_CHANNELS_LAYER2]),
+          'b_conv2': initialize('bc2', [NUM_OF_CHANNELS_LAYER3]),
+          'b_fc': initialize('bfc', [SIZE_OF_FULLY_CONNECTED_LAYER]),
+          'out': initialize('bo', [OUTPUT_DIM])}
 
 #CNN:
 x = tf.reshape(observations, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
 #first layer: conv + pool
 conv1 = tf.nn.relu(conv2d(x, weights['W_conv1']) + biases['b_conv1'])
-conv1 = maxpool2d(conv1)
+pool1 = maxpool2d(conv1)
 #second layer: conv + pool
-conv2 = tf.nn.relu(conv2d(conv1, weights['W_conv2']) + biases['b_conv2'])
-conv2 = maxpool2d(conv2)
+conv2 = tf.nn.relu(conv2d(pool1, weights['W_conv2']) + biases['b_conv2'])
+pool2 = maxpool2d(conv2)
 #last layer - fully connected layer?
-fc = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
-fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
-fc = tf.nn.dropout(fc, keep_rate)
+r_layer2 = tf.reshape(pool2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
+fc = tf.nn.relu(tf.matmul(r_layer2, weights['W_fc']) + biases['b_fc'])
+dropped_fc = tf.nn.dropout(fc, keep_rate)
 
-score = tf.matmul(fc, weights['out']) + biases['out']
+score = tf.matmul(dropped_fc, weights['out']) + biases['out']
 actions_probs = tf.nn.softmax(score)
 
+#HERE STARTS THE GRADIENT COMPUTATION
 tvars = tf.trainable_variables()
 # rewards sums from k=t to T:
 rewards_arr = tf.placeholder(tf.float32, [1,None])
@@ -80,6 +89,7 @@ train_step = tf.train.AdamOptimizer(1e-2).apply_gradients(zip(Gradients_holder,t
 
 #agent starts here:
 init = tf.global_variables_initializer()
+init2 = tf.initialize_all_variables()
 def main():
     rewards, states, actions_booleans = [], [], []
     episode_number = 0
@@ -90,9 +100,9 @@ def main():
 
     with tf.Session() as sess:
         sess.run(init)
+        sess.run(init2)
 
         #TODO: load wieghts
-
 
         update_weights = False #if to much time passed, update the weights even if the game is not finished
         grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
@@ -100,11 +110,9 @@ def main():
         while game_counter < MAX_GAMES:
             obsrv, reward, done = get_observation()  # get observation
             # append the relevant observation to folloeing action, to states
-            states.append(obsrv)        #TODO: not sure it is possible to agregate the state like this since this is not a matrix multipication
-                                        #TODO: in the model but each time we send a tensor to the model... consider ask in ML-QA/stack overflow group
-                                        #TODO: meanwhile create a model that is being updated after each observation
+            states.append(obsrv)        #TODO: use np.concatinate?
             # Run the policy network and get a distribution over actions
-            action_probs = sess.run(actions_probs, feed_dict={observations: obsrv})
+            action_probs = sess.run(actions_probs, feed_dict={observations: [obsrv]})
             # np.random.multinomial cause problems
             try:
                 m_actions = np.random.multinomial(1, action_probs[0])
