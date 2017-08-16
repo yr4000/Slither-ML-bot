@@ -8,6 +8,7 @@ import math
 import json
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0,1,2
+SLICES_NO = 32
 
 #TODO: is it fine that this function is here?
 def get_empty_grads_sums():
@@ -62,6 +63,16 @@ def send_action(index):
 
     return True
 
+#input: 0 <= index < 2*SLICES_NO
+#output: action: the slice the bot will move towards, do_accelerate: 0 for no, 1 for yes
+def choose_action(index):
+    return {
+        'action': index%SLICES_NO,
+        'do_accelerate': index//SLICES_NO
+    }
+
+#TODO: this is a good example how to implement switch-case in python. delete in the end
+'''
 #TODO: temporary
 #according to the action, send to the server what to do
 def choose_action(index):
@@ -97,3 +108,4 @@ def choose_action(index):
             'do_accelerate': True
         }
     }[index]
+'''
