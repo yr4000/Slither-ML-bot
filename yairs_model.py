@@ -1,11 +1,12 @@
-import pickle as pkl
-import math
-
 from utils.models_utils import *
+import pickle as pkl
+import os
+
 #TODO: I am not sure if there is a problem here with the Qt thing or not
 import matplotlib
 matplotlib.use('Qt4Agg')
 
+#CNN constants
 OUTPUT_DIM = 64
 INPUT_DIM = 400
 SQRT_INPUT_DIM  =20 #IN ORDER TO RESHAPE INTO TENSOR
@@ -15,13 +16,23 @@ NUM_OF_CHANNELS_LAYER1 = 1
 NUM_OF_CHANNELS_LAYER2 = 16     #TODO: Is that really what suppose to be here?
 NUM_OF_CHANNELS_LAYER3 = 32
 SIZE_OF_FULLY_CONNECTED_LAYER = 256
+VAR_NO = 8      #number of Ws and bs (the variables)
+KEEP_RATE = 0.8
+keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
+
+#Model constants
 MAX_GAMES = 100
 BATCH_SIZE = 5
 
-VAR_NO = 8
+#Load and save constants
+WEIGHTS_FILE = 'weights.pkl'
+BEST_WEIGHTS = 'best_weights.pkl'
+LOAD = True
 
-keep_rate = 0.8
-keep_prob = tf.placeholder(tf.float32)
+
+
+
+
 
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
@@ -61,7 +72,7 @@ pool2 = maxpool2d(conv2)
 #last layer - fully connected layer?
 r_layer2 = tf.reshape(pool2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
 fc = tf.nn.relu(tf.matmul(r_layer2, weights['W_fc']) + biases['b_fc'])
-dropped_fc = tf.nn.dropout(fc, keep_rate)
+dropped_fc = tf.nn.dropout(fc, KEEP_RATE)
 
 score = tf.matmul(dropped_fc, weights['out']) + biases['out']
 actions_probs = tf.nn.softmax(score)
@@ -102,7 +113,21 @@ def main():
         sess.run(init)
         sess.run(init2)
 
-        #TODO: load wieghts
+        # check if file is not empty
+        if (os.path.isfile(WEIGHTS_FILE) and LOAD):
+            # Load with shmickle
+            f = open(WEIGHTS_FILE, 'rb')  # BEST_WEIGHTS
+            for var, val in zip(tvars, pkl.load(f)):
+                sess.run(tf.assign(var, val))
+            f.close()
+            print("loaded weights successfully!")
+
+        # creates file if it doesn't exisits:
+        if (not os.path.isfile(WEIGHTS_FILE)):
+            open(WEIGHTS_FILE, 'a').close()
+        if (not os.path.isfile(BEST_WEIGHTS)):
+            open(BEST_WEIGHTS, 'a').close()
+            print("created file sucessfully!")
 
         update_weights = False #if to much time passed, update the weights even if the game is not finished
         grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
@@ -166,6 +191,14 @@ def main():
                     sess.run(train_step, feed_dict=grad_dict)
                     #nullify grads_sum
                     grads_sums = get_empty_grads_sums()
+
+                    #TODO: we don't want to save every time we update, this is for test and will be moved
+                    # manual save
+                    f = open(WEIGHTS_FILE, 'wb')
+                    pkl.dump(sess.run(tvars), f, protocol=2)
+                    f.close()
+                    print('auto-saved weights successfully.')
+
                 # nullify relevant vars and updates episode number.
                 rewards, states, actions_booleans = [], [], []
                 manual_prob_use = 0
