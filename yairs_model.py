@@ -12,7 +12,7 @@ SQRT_INPUT_DIM  =20 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
-NUM_OF_CHANNELS_LAYER2 = 16
+NUM_OF_CHANNELS_LAYER2 = 16     #TODO: Is that really what suppose to be here?
 NUM_OF_CHANNELS_LAYER3 = 32
 SIZE_OF_FULLY_CONNECTED_LAYER = 256
 MAX_GAMES = 100
@@ -139,7 +139,7 @@ def main():
 
             if done or update_weights:
                 #UPDATE MODEL:
-                '''
+
                 # create the rewards sums of the reversed rewards array
                 rewards_sums = np.cumsum(rewards[::-1])
                 # normalize prizes and reverse
@@ -164,11 +164,13 @@ def main():
                     #TODO choose learning rate?
                     # take the train step
                     sess.run(train_step, feed_dict=grad_dict)
-                    # nullify relevant vars and updates episode number.
-                    rewards, states, actions_booleans = [], [], []
-                    manual_prob_use = 0
+                    #nullify grads_sum
                     grads_sums = get_empty_grads_sums()
-            '''
+                # nullify relevant vars and updates episode number.
+                rewards, states, actions_booleans = [], [], []
+                manual_prob_use = 0
+
+
 
 main()
 
