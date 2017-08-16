@@ -43,7 +43,6 @@ def get_observation():
             data = json.load(json_data)
     except:
         data = get_default_data()
-    print(data)
     return data["observation"], data["score"], data["game_over"]
 
 #TODO: temporary solution, need to fix
@@ -64,11 +63,13 @@ def send_action(index):
     return True
 
 #input: 0 <= index < 2*SLICES_NO
+#the cast to int is needed because numpy types can't be converted to json:
+#https://stackoverflow.com/questions/11942364/typeerror-integer-is-not-json-serializable-when-serializing-json-in-python/11942689#11942689
 #output: action: the slice the bot will move towards, do_accelerate: 0 for no, 1 for yes
 def choose_action(index):
     return {
-        'action': index%SLICES_NO,
-        'do_accelerate': index//SLICES_NO
+        'action': int(index%SLICES_NO),
+        'do_accelerate': int(index//SLICES_NO)
     }
 
 #TODO: this is a good example how to implement switch-case in python. delete in the end
