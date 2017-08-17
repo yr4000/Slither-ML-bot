@@ -20,7 +20,7 @@ def boost(relevancy_indicator , processed_rewards):
 
 #calculates rewards per step from the score per step array
 def calc_reward_from_raw(score_arr):
-    rewards = np.diff(score_arr)#convert raw score to points earned/lost per step
+    rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
     rewards[len(rewards)-1] = PUNISHMENT_FOR_DEATH
     cumulative_discounted_rewards = np.zeros(len(rewards))
     partial_sum = 0
