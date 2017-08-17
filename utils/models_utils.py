@@ -11,6 +11,7 @@ DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0,1,2
 SLICES_NO = 32
 
 #TODO: is it fine that this function is here?
+#TODO: fix according to Carmels version
 def get_empty_grads_sums():
     grads_sums = tf.trainable_variables()
     for i, val in enumerate(grads_sums):
@@ -50,7 +51,7 @@ def get_default_data():
     return {
         'observation': [0 for i in range(400)],
         'score': 0,
-        'game_over': False,
+        'is_dead': False,
     }
 
 #TODO: in case of failure send boolean
