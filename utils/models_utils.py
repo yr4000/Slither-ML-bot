@@ -59,7 +59,6 @@ def send_action(index):
     action = choose_action(index)
     with open('action.json', 'w') as outfile:
         json.dump(action, outfile)
-        outfile.close()
 
     return True
 
@@ -80,8 +79,8 @@ def get_reward(score_arr,is_dead):
     else:
         reward = score_arr[-1] - score_arr[-2]
 
-    return reward
-
+    return -5 if reward == 0 else reward
+#    return reward
 
 #TODO: this is a good example how to implement switch-case in python. delete in the end
 '''
