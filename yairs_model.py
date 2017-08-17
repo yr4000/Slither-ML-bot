@@ -93,6 +93,7 @@ pi = tf.log(filtered_actions)
 loss = tf.reduce_sum(tf.multiply(pi,rewards_arr))
 Gradients = tf.gradients(-loss,tvars)
 
+#from here satrts update weights
 Gradients_holder = [tf.placeholder(tf.float32) for i in range(VAR_NO)]
 # then train the network - for each of the parameters do the GD as described in the HW.
 #learning_rate = tf.placeholder(tf.float32, shape=[])   #TODO: maybe use later for oprimization of the model
@@ -101,14 +102,14 @@ train_step = tf.train.AdamOptimizer(1e-2).apply_gradients(zip(Gradients_holder,t
 
 #agent starts here:
 init = tf.global_variables_initializer()
-init2 = tf.initialize_all_variables()
+#init2 = tf.initialize_all_variables()
 def main():
     #variables used for models logics
     raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
     episode_number = 0
 
     #variables for debugging:
-    manual_prob_use = 0
+    manual_prob_use = 0         #TODO: consider use the diffrences from 1
     game_counter = 0        #TODO: for tests
 
     #variables for evaluation:
@@ -116,7 +117,7 @@ def main():
 
     with tf.Session() as sess:
         sess.run(init)
-        sess.run(init2)     #TODO: check if this necessary
+#       sess.run(init2)     #TODO: check if this necessary
 
         # check if file is not empty
         if (os.path.isfile(WEIGHTS_FILE) and LOAD):
@@ -141,7 +142,7 @@ def main():
         while game_counter < MAX_GAMES:
             #get data and process score to reward
             obsrv, score, is_dead = get_observation()  # get observation
-            is_dead = False
+            is_dead = False         #TODO: for debug
             raw_scores.append(score)
 
             #TODO: simple reward function
