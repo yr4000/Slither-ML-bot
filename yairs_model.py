@@ -2,6 +2,7 @@ from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
 import pickle as pkl
 import os
+import time
 
 #TODO: I am not sure if there is a problem here with the Qt thing or not
 import matplotlib
@@ -22,13 +23,13 @@ KEEP_RATE = 0.8
 keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
 
 #Model constants
-MAX_GAMES = 100
-BATCH_SIZE = 5
+MAX_GAMES = 10000
+BATCH_SIZE = 50
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD = True
+LOAD = False
 
 #other constants:
 BEGINING_SCORE = 10
@@ -107,6 +108,8 @@ def main():
     #variables used for models logics
     raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
     episode_number = 0
+    update_weights = False  # if to much time passed, update the weights even if the game is not finished
+    grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
 
     #variables for debugging:
     manual_prob_use = 0         #TODO: consider use the diffrences from 1
@@ -136,9 +139,6 @@ def main():
             print("created file sucessfully!")
 
 
-        update_weights = False #if to much time passed, update the weights even if the game is not finished
-        grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
-
         while game_counter < MAX_GAMES:
             #get data and process score to reward
             obsrv, score, is_dead = get_observation()  # get observation
@@ -147,6 +147,9 @@ def main():
 
             #TODO: simple reward function
             reward = get_reward(raw_scores, is_dead)
+
+            #TODO: for debug
+            vars = sess.run(tvars)
 
             # append the relevant observation to folloeing action, to states
             states.append(obsrv)        #TODO: use np.concatinate?
@@ -163,6 +166,9 @@ def main():
             actions_booleans.append(m_actions)
             # index of the selected action
             action = np.argmax(actions_booleans[-1])
+            #TODO: for debuggig
+            #print("action_probs: " + str(action_probs))
+            print("observation got: " + str(obsrv))
             print("action chosen: " + str(action))
             # step the environment and get new measurements
             send_action(action)
@@ -171,10 +177,11 @@ def main():
             game_counter += 1  #TODO: this is for tests
 
             #TODO: temporary, change to something that make sense...
-            if(game_counter % 5 ==0):
+            if(game_counter % 10 ==0):
                 update_weights = True
 
             #TODO: sleep here?
+            time.sleep(0.05)
 
             if is_dead or update_weights:
                 #UPDATE MODEL:
@@ -194,6 +201,16 @@ def main():
                 # modify actions_booleans to be an array of booleans
                 actions_booleans = np.array(actions_booleans)
                 actions_booleans = actions_booleans == 1
+
+                #TODO: showind process results for debugging:
+                fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,
+                                                       rewards_arr: modified_rewards_sums})
+                pi_res = sess.run(pi, feed_dict={observations: states, actions_mask: actions_booleans,
+                                                       rewards_arr: modified_rewards_sums})
+                loss_res = sess.run(loss, feed_dict={observations: states, actions_mask: actions_booleans,
+                                                       rewards_arr: modified_rewards_sums})
+
+
                 # gradients for current episode
                 grads = sess.run(Gradients, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
