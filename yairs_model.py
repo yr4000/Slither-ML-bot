@@ -1,4 +1,5 @@
 from utils.models_utils import *
+from utils.reward_utils import calc_reward_from_raw
 import pickle as pkl
 import os
 
@@ -9,7 +10,7 @@ matplotlib.use('Qt4Agg')
 #CNN constants
 OUTPUT_DIM = 64
 INPUT_DIM = 400
-SQRT_INPUT_DIM  =20 #IN ORDER TO RESHAPE INTO TENSOR
+SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
@@ -29,8 +30,8 @@ WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
 LOAD = True
 
-
-
+#other constants:
+BEGINING_SCORE = 10
 
 
 
@@ -102,16 +103,20 @@ train_step = tf.train.AdamOptimizer(1e-2).apply_gradients(zip(Gradients_holder,t
 init = tf.global_variables_initializer()
 init2 = tf.initialize_all_variables()
 def main():
-    rewards, states, actions_booleans = [], [], []
+    #variables used for models logics
+    raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
     episode_number = 0
-    game_counter = 0
 
     #variables for debugging:
     manual_prob_use = 0
+    game_counter = 0        #TODO: for tests
+
+    #variables for evaluation:
+
 
     with tf.Session() as sess:
         sess.run(init)
-        sess.run(init2)
+        sess.run(init2)     #TODO: check if this necessary
 
         # check if file is not empty
         if (os.path.isfile(WEIGHTS_FILE) and LOAD):
@@ -129,11 +134,19 @@ def main():
             open(BEST_WEIGHTS, 'a').close()
             print("created file sucessfully!")
 
+
         update_weights = False #if to much time passed, update the weights even if the game is not finished
         grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
 
         while game_counter < MAX_GAMES:
-            obsrv, reward, done = get_observation()  # get observation
+            #get data and process score to reward
+            obsrv, score, is_dead = get_observation()  # get observation
+            is_dead = False
+            raw_scores.append(score)
+
+            #TODO: simple reward function
+            reward = get_reward(raw_scores, is_dead)
+
             # append the relevant observation to folloeing action, to states
             states.append(obsrv)        #TODO: use np.concatinate?
             # Run the policy network and get a distribution over actions
@@ -162,14 +175,19 @@ def main():
 
             #TODO: sleep here?
 
-            if done or update_weights:
+            if is_dead or update_weights:
                 #UPDATE MODEL:
 
+                #TODO: currently doesn't work
+                '''
+                #calculate rewards from raw scores:
+                rewards = calc_reward_from_raw(raw_scores)
+                '''
                 # create the rewards sums of the reversed rewards array
                 rewards_sums = np.cumsum(rewards[::-1])
                 # normalize prizes and reverse
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
-                rewards_sums -= np.mean(rewards_sums)
+                rewards_sums -= np.mean(rewards)
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
                 modified_rewards_sums = np.reshape(rewards_sums, [1, len(rewards_sums)])
                 # modify actions_booleans to be an array of booleans
@@ -200,7 +218,7 @@ def main():
                     print('auto-saved weights successfully.')
 
                 # nullify relevant vars and updates episode number.
-                rewards, states, actions_booleans = [], [], []
+                raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
                 manual_prob_use = 0
 
 
