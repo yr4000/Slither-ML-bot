@@ -949,8 +949,9 @@ var bot = window.bot = (function() {
                     data:    JSON.stringify(features),
                     success: function(data) {
                         //console.log("entered model function.");
-                        console.log(data);
-                        bot.move(1);
+                        //console.log(data);
+                        bot.setDirection(data.action);
+                        window.setAcceleration(data.do_accelerate);
                     },
                // vvv---- This is the new bit
                error:   function(jqXHR, textStatus, errorThrown) {
@@ -1012,15 +1013,18 @@ var bot = window.bot = (function() {
         //Updates all the points in label_map which are close to enemy snakes
         lableMapBySnakes: function(){
             var index = -1;
+            var point = {};
             for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
                 if (window.snakes[snake].id !== window.snake.id &&
                     window.snakes[snake].alive_amt === 1) {
                     for (var pt = 0, pts = window.snakes[snake].pts.length; pt < pts; pt++){
-                        point = {
-                            x: window.snakes[snake].pts[pt].xx,
-                            y: window.snakes[snake].pts[pt].yy
-                        };
-                        index = bot.getIndexFromXY(point.x,point.y);
+                        if(!window.snakes[snake].pts[pt].dying){
+                            point = {
+                                x: window.snakes[snake].pts[pt].xx,
+                                y: window.snakes[snake].pts[pt].yy
+                            };
+                            index = bot.getIndexFromXY(point.x,point.y);
+                        }
                         if (!(index < 0)){
                             bot.label_map[index] = -1;
                         }
@@ -1566,14 +1570,15 @@ var userInterface = window.userInterface = (function() {
                 bot.isBotRunning = true;
                 //switch between ML mode an AI mode
                 if(bot.ML_mode){
+                    //bot.every();      updates AI bot variables
                     bot.updateLabelMap();
                     if(window.visualDebugging){
                         bot.drawNet();
                     }
                     await sleep(50);
-                    console.log("pre-post");
+                    //console.log("pre-post");
                     bot.sendData();
-                    console.log("post-post");
+                    //console.log("post-post");
                 }
                 else{
                     bot.go();
@@ -1581,6 +1586,7 @@ var userInterface = window.userInterface = (function() {
             }
             //snake died.
             else if (bot.isBotEnabled && bot.isBotRunning) {
+                console.log('snake died');      //TODO: for debug
                 bot.isBotRunning = false;
                 bot.sendData()
                 //TODO: sleep here?
