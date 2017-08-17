@@ -930,7 +930,7 @@ var bot = window.bot = (function() {
             var features = {
                 observation: bot.label_map,
                 score: bot.getMyScore(),
-                game_over: false,
+                is_dead: window.snake == null,
                 /*
                 snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
                 snake: window.snake,
@@ -1578,8 +1578,12 @@ var userInterface = window.userInterface = (function() {
                 else{
                     bot.go();
                 }
-            } else if (bot.isBotEnabled && bot.isBotRunning) {
+            }
+            //snake died.
+            else if (bot.isBotEnabled && bot.isBotRunning) {
                 bot.isBotRunning = false;
+                bot.sendData()
+                //TODO: sleep here?
                 if (window.lastscore && window.lastscore.childNodes[1]) {
                     bot.scores.push(parseInt(window.lastscore.childNodes[1].innerHTML));
                     bot.scores.sort(function(a, b) {
