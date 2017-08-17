@@ -35,10 +35,14 @@ def ask_model():
         res = {}
 
     # calculate angle using r and x
+
+    '''
     teta = math.acos(data['x'] / data['r'])
     teta += math.pi / 18
     res['x'] = data['r']*math.cos(teta)
     res['y'] = data['r']*math.sin(teta)
+    '''
+
     print(res)
     return jsonify(res)
 
