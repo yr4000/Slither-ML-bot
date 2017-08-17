@@ -43,7 +43,7 @@ def get_observation():
             data = json.load(json_data)
     except:
         data = get_default_data()
-    return data["observation"], data["score"], data["game_over"]
+    return data["observation"], data["score"], data["is_dead"]
 
 #TODO: temporary solution, need to fix
 def get_default_data():
