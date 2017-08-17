@@ -5,6 +5,13 @@ BACKWARDS_RELEVANCY_WINDOW = 10
 BOOSTING_FACTOR = 3.0
 PUNISHMENT_FOR_DEATH = -50
 
+#we assume here we get the array in the right order, so each sum is indeed being multiply with the right factor
+def decrese_rewards(rewards):
+    #gama = 0.99
+    dec_arr = np.array([DISCOUNT_FACTOR**(len(rewards)-t) for t in range(len(rewards))])
+    res = np.multiply(rewards,dec_arr)
+    return res
+
 #boosts by BOOSTING_FACTOR all the BACKWARDS_RELEVANCY_WINDOW rewards before an
 #actual point was earned in the game
 def boost(relevancy_indicator , processed_rewards):
@@ -20,11 +27,15 @@ def boost(relevancy_indicator , processed_rewards):
 
 #calculates rewards per step from the score per step array
 def calc_reward_from_raw(score_arr):
+    #TODO: if array sizs <=1 it crushes
     rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
-    rewards[len(rewards)-1] = PUNISHMENT_FOR_DEATH
+    rewards[len(rewards)-1] = PUNISHMENT_FOR_DEATH      #TODO: I am not sure this is true, we shouldn't update only in death
     cumulative_discounted_rewards = np.zeros(len(rewards))
     partial_sum = 0
     #calc discounted rewards like HW4
+    #TODO: I don't think this should be here (yair), but separately.
+    #cumulative_discounted_rewards = np.cumsum(rewards[::-1])
+    #cumulative_discounted_rewards = decrese_rewards(cumulative_discounted_rewards[::-1])
     for i in reversed(range(0, len(rewards))):
         partial_sum = partial_sum * DISCOUNT_FACTOR + rewards[i]
         cumulative_discounted_rewards[i] = partial_sum
