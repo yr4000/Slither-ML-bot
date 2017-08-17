@@ -72,6 +72,16 @@ def choose_action(index):
         'do_accelerate': int(index//SLICES_NO)
     }
 
+#a simple reward function to begin with
+def get_reward(score_arr,is_dead):
+    if(is_dead):
+        reward = -100
+    else:
+        reward = score_arr[-1] - score_arr[-2]
+
+    return reward
+
+
 #TODO: this is a good example how to implement switch-case in python. delete in the end
 '''
 #TODO: temporary
