@@ -991,7 +991,7 @@ var bot = window.bot = (function() {
         //gets x and y coordinates of a point in game unit, and return the closest index
         //to it in the label_map.
         //in case of failure returns -1;
-        getIndexFromXY: function(x,y){
+        getIndexFromXY_old: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
                 bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize))];
@@ -1000,6 +1000,17 @@ var bot = window.bot = (function() {
             if(index <0 || index > Math.pow(bot.mapSize,2) - 1){
                 index = -1;
             }
+            return index;
+        },
+
+        getIndexFromXY: function(x,y){
+            var head = [window.snake.xx, window.snake.yy];
+            if((Math.abs(x - head[0]) > bot.mapSize/2 * bot.offsetSize) || (Math.abs(y - head[1]) > bot.mapSize/2 * bot.offsetSize)){
+                return -1;
+            }
+            var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
+                bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize))];
+            var index = bot.mapSize*offsets[1] + offsets[0];
             return index;
         },
 

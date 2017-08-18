@@ -7,7 +7,7 @@ import numpy as np
 import math
 import json
 
-DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0,1,2
+DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = 32
 
 #TODO: is it fine that this function is here?
@@ -42,9 +42,11 @@ def get_observation():
     try:
         with open('observation.json') as json_data:
             data = json.load(json_data)
+            default = 0
     except:
         data = get_default_data()
-    return data["observation"], data["score"], data["is_dead"]
+        default = 1
+    return data["observation"], data["score"], data["is_dead"], default
 
 #TODO: temporary solution, need to fix
 def get_default_data():
@@ -59,7 +61,6 @@ def send_action(index):
     action = choose_action(index)
     with open('action.json', 'w') as outfile:
         json.dump(action, outfile)
-
     return True
 
 #input: 0 <= index < 2*SLICES_NO

@@ -24,12 +24,13 @@ keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
 
 #Model constants
 MAX_GAMES = 10000
+STEPS_UNTIL_BACKPROP = 50
 BATCH_SIZE = 50
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD = False
+LOAD_WEIGHTS = False
 
 #other constants:
 BEGINING_SCORE = 10
@@ -113,23 +114,24 @@ def main():
     grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
 
     #variables for debugging:
-    manual_prob_use = 0         #TODO: consider use the diffrences from 1
-    game_counter = 0        #TODO: for tests
+    manual_prob_use = 0
+    prob_deviation_sum = 0
+    default_data_counter = 0  # counts number of exceptions in reading the observations' file (and getting a default data)
+    step_counter = 0        #TODO: for tests
 
     #variables for evaluation:
 
 
     with tf.Session() as sess:
         sess.run(init)
-#       sess.run(init2)     #TODO: check if this necessary
+        #sess.run(init2)     #TODO: check if this necessary
 
         # check if file is not empty
-        if (os.path.isfile(WEIGHTS_FILE) and LOAD):
+        if (os.path.isfile(WEIGHTS_FILE) and LOAD_WEIGHTS):
             # Load with shmickle
-            f = open(WEIGHTS_FILE, 'rb')  # BEST_WEIGHTS
-            for var, val in zip(tvars, pkl.load(f)):
-                sess.run(tf.assign(var, val))
-            f.close()
+            with open(WEIGHTS_FILE, 'rb') as f:  # BEST_WEIGHTS
+                for var, val in zip(tvars, pkl.load(f)):
+                    sess.run(tf.assign(var, val))
             print("loaded weights successfully!")
 
         # creates file if it doesn't exisits:
@@ -137,12 +139,13 @@ def main():
             open(WEIGHTS_FILE, 'a').close()
         if (not os.path.isfile(BEST_WEIGHTS)):
             open(BEST_WEIGHTS, 'a').close()
-            print("created file sucessfully!")
+            print("created weights files sucessfully!")
 
 
-        while game_counter < MAX_GAMES:
+        while step_counter < MAX_GAMES:
             #get data and process score to reward
-            obsrv, score, is_dead = get_observation()  # get observation
+            obsrv, score, is_dead, default = get_observation()  # get observation
+            default_data_counter += default
             is_dead = False         #TODO: for debug
             raw_scores.append(score)
 
@@ -152,37 +155,38 @@ def main():
             #TODO: for debug
             vars = sess.run(tvars)
 
-            # append the relevant observation to folloeing action, to states
+            # append the relevant observation to the following action, to states
             states.append(obsrv)        #TODO: use np.concatinate?
             # Run the policy network and get a distribution over actions
             action_probs = sess.run(actions_probs, feed_dict={observations: [obsrv]})
             # np.random.multinomial cause problems
             try:
-                m_actions = np.random.multinomial(1, action_probs[0])
+                chosen_actions = np.random.multinomial(1, action_probs[0])
             except:
-                m_actions = pick_random_action_manually(action_probs[0])
+                chosen_actions = pick_random_action_manually(action_probs[0])
                 manual_prob_use += 1
+                prob_deviation_sum += np.abs(np.sum(action_probs) - 1)
 
             # Saves the selected action for a later use
-            actions_booleans.append(m_actions)
+            actions_booleans.append(chosen_actions)
             # index of the selected action
             action = np.argmax(actions_booleans[-1])
             #TODO: for debuggig
-            #print("action_probs: " + str(action_probs))
+            print("action_probs: " + str(action_probs))
             print("observation got: " + str(obsrv))
             print("action chosen: " + str(action))
             # step the environment and get new measurements
             send_action(action)
             # add reward to rewards for a later use in the training step
             rewards.append(reward)
-            game_counter += 1  #TODO: this is for tests
+            step_counter += 1  #TODO: this is for tests
 
             #TODO: temporary, change to something that make sense...
-            if(game_counter % 10 ==0):
+            if (step_counter % STEPS_UNTIL_BACKPROP) == 0:
                 update_weights = True
 
             #TODO: sleep here?
-            time.sleep(0.05)
+            time.sleep(1)
 
             if is_dead or update_weights:
                 #UPDATE MODEL:
@@ -231,9 +235,8 @@ def main():
 
                     #TODO: we don't want to save every time we update, this is for test and will be moved
                     # manual save
-                    f = open(WEIGHTS_FILE, 'wb')
-                    pkl.dump(sess.run(tvars), f, protocol=2)
-                    f.close()
+                    with open(WEIGHTS_FILE, 'wb') as f:
+                        pkl.dump(sess.run(tvars), f, protocol=2)
                     print('auto-saved weights successfully.')
 
                 # nullify relevant vars and updates episode number.
@@ -243,7 +246,3 @@ def main():
 
 
 main()
-
-
-
-
