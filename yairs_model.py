@@ -140,8 +140,9 @@ def main():
 
 
         while game_counter < MAX_GAMES:
+            wait_for_game_to_start()
             #get data and process score to reward
-            obsrv, score, is_dead = get_observation()  # get observation
+            obsrv, score, is_dead, default_obsrv = get_observation()  # get observation
             is_dead = False         #TODO: for debug
             raw_scores.append(score)
 
