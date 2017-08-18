@@ -6,6 +6,7 @@ import tensorflow as tf
 import numpy as np
 import math
 import json
+import time
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = 32
@@ -82,6 +83,14 @@ def get_reward(score_arr,is_dead):
 
     return -5 if reward == 0 else reward
 #    return reward
+
+def wait_for_game_to_start():
+    obsrv, score, is_dead, default  = get_observation()
+    while(is_dead):
+        time.sleep(0.5)
+        obsrv, score, is_dead, default = get_observation()
+
+
 
 #TODO: this is a good example how to implement switch-case in python. delete in the end
 '''

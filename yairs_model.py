@@ -2,7 +2,6 @@ from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
 import pickle as pkl
 import os
-import time
 
 #TODO: I am not sure if there is a problem here with the Qt thing or not
 import matplotlib
