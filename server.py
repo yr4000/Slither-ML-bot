@@ -25,6 +25,7 @@ def ask_model():
     #print("Snake: "+ str(data['snake']) + '\n')
     #print("input: " + str(data['input']) + '\n')
 
+    #TODO: add sleep?
     print("x: "+str(data['x']) + ", y: " + str(data['y']) + ", r: " + str(data['r']) + "\n")
 
     #gets action from file
@@ -32,7 +33,8 @@ def ask_model():
         with open('action.json') as json_data:
             res = json.load(json_data)
     except:
-        res = {}
+        res = {'action': 0,
+               'do_accelerate': 0}        #TODO: change to a better default
 
     # calculate angle using r and x
 
