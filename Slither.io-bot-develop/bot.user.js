@@ -979,7 +979,7 @@ var bot = window.bot = (function() {
         //n MUST BE EVEN!!!
         restartLabelMap: function(n){
             bot.label_map = new Array(Math.pow(n,2)).fill(0);
-            /*
+             /*
             var res = {};
             for( i =0; i <(Math.pow(n,2)); i++){
                 res[i] = 0;
@@ -1016,10 +1016,27 @@ var bot = window.bot = (function() {
 
         updateLabelMap: function () {
             bot.restartLabelMap(bot.mapSize);
+            /*
+            if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
+                Math.pow(bot.MAP_R - 500, 2)){
+                markEdge();
+                }
+            */
             //bot.labelMapBySelf();
             bot.labelMapByFoods();
             bot.lableMapBySnakes();
         },
+
+        markEdge: function(){
+            for(int i= 0 ; i < bot.mapSize ; i++){
+                ind_x = ((i % bot.mapSize) * offsetSize) + window.snake.xx;
+                ind_y = (Math.floor(i / bot.mapSize) * offsetSize) + window.snake.yy;
+                if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y) >
+                    Math.pow(bot.MAP_R - 500, 2)){
+                }
+            }
+
+        }
 
         //Updates all the points in label_map which are close to enemy snakes
         lableMapBySnakes: function(){
@@ -1610,6 +1627,7 @@ var userInterface = window.userInterface = (function() {
                 }
 
                 if (window.autoRespawn) {
+                    //TODO: put whatever you want to do before respawning - here
                     window.connect();
                 }
             }
