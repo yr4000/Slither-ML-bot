@@ -396,6 +396,7 @@ var bot = window.bot = (function() {
         //This is for ML mode
         MOVEMENT_OFFSET: Math.PI/16,    //NOTE: the larger the slices the smaller the circle will (because of the comunication speed)
         MOVEMENT_R: 100,
+        SEND_C: 0,          //send counter
         ML_mode: true,
         //TODO: play with the offset, consider create width and length offsets
         offsetSize: 40,    //the size of each pixel in label_map is offsetSize^2
@@ -949,7 +950,7 @@ var bot = window.bot = (function() {
                     data:    JSON.stringify(features),
                     success: function(data) {
                         //console.log("entered model function.");
-                        //console.log(data);
+                        console.log(data);
                         bot.setDirection(data.action);
                         window.setAcceleration(data.do_accelerate);
                     },
@@ -1586,7 +1587,7 @@ var userInterface = window.userInterface = (function() {
             }
         },
 
-        oefTimer: async function() {
+        oefTimer: function() {
             var start = Date.now();
             // Original slither.io oef function + whatever is under it
             original_oef();
@@ -1598,15 +1599,17 @@ var userInterface = window.userInterface = (function() {
                 bot.isBotRunning = true;
                 //switch between ML mode an AI mode
                 if(bot.ML_mode){
-                    //bot.every();      updates AI bot variables
                     bot.updateLabelMap();
                     if(window.visualDebugging){
                         bot.drawNet();
                     }
-                    await sleep(50);
-                    //console.log("pre-post");
-                    bot.sendData();
-                    //console.log("post-post");
+                    //This is how we control the amount of requests per time
+                    if(bot.SEND_C % 10 == 0){
+                        //console.log("pre-post");
+                        bot.sendData();
+                        //console.log("post-post");
+                    }
+                    bot.SEND_C++;
                 }
                 else{
                     bot.go();
@@ -1616,8 +1619,7 @@ var userInterface = window.userInterface = (function() {
             else if (bot.isBotEnabled && bot.isBotRunning) {
                 console.log('snake died');      //TODO: for debug
                 bot.isBotRunning = false;
-                bot.sendData()
-                //TODO: sleep here?
+                bot.sendData();
                 if (window.lastscore && window.lastscore.childNodes[1]) {
                     bot.scores.push(parseInt(window.lastscore.childNodes[1].innerHTML));
                     bot.scores.sort(function(a, b) {
