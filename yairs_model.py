@@ -144,7 +144,7 @@ def main():
         while step_counter < MAX_GAMES:
             wait_for_game_to_start()
             #get data and process score to reward
-            obsrv, score, is_dead, default_obsrv = get_observation()  # get observation
+            obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
 
             raw_scores.append(score)
 
@@ -183,7 +183,7 @@ def main():
             print("default_data_counter: " + str(default_data_counter))
             print("step_counter: "+str(step_counter))
             # step the environment and get new measurements
-            send_action(action)
+            send_action(action, request_id)
             # add reward to rewards for a later use in the training step
             rewards.append(reward)
             step_counter += 1  #TODO: this is for tests

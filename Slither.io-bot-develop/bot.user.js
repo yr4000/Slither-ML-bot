@@ -405,6 +405,9 @@ var bot = window.bot = (function() {
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
 
+        //TODO: ML debug vriables
+        message_id: 1,
+
         direction: {x: 0 , y: -100},    //determains the direction of the bot
 
         getSnakeWidth: function(sc) {
@@ -928,10 +931,15 @@ var bot = window.bot = (function() {
         sendData: function(){
             //console.log('Started sendData');
             bot.updateLabelMap();
+            var time = new Date();      //TODO: for debug
             var features = {
                 observation: bot.label_map,
                 score: bot.getMyScore(),
                 is_dead: window.snake == null,
+                message_id: bot.message_id,
+                hours: time.getHours(),
+                minutes: time.getMinutes(),
+                seconds: time.getSeconds(),
                 /*
                 snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
                 snake: window.snake,
@@ -943,6 +951,7 @@ var bot = window.bot = (function() {
                 y: bot.direction.y,
                 r: 100
             };
+            bot.message_id++;
             //console.log("Started ajax");
             $.ajax({
                     type:    "POST",
@@ -950,9 +959,11 @@ var bot = window.bot = (function() {
                     data:    JSON.stringify(features),
                     success: function(data) {
                         //console.log("entered model function.");
-                        console.log(data);
+                        //console.log(data);
                         bot.setDirection(data.action);
                         window.setAcceleration(data.do_accelerate);
+                        console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
+
                     },
                // vvv---- This is the new bit
                error:   function(jqXHR, textStatus, errorThrown) {

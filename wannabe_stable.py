@@ -143,8 +143,9 @@ def main():
 
 
         while step_counter < MAX_GAMES:
+            wait_for_game_to_start()
             #get data and process score to reward
-            obsrv, score, is_dead, default = get_observation()  # get observation
+            obsrv, score, is_dead, request_id, default = get_observation()  # get observation
             default_data_counter += default
             is_dead = False         #TODO: for debug
             raw_scores.append(score)
@@ -175,8 +176,12 @@ def main():
             print("action_probs: " + str(action_probs))
             print("observation got: " + str(obsrv))
             print("action chosen: " + str(action))
+            print("manual_prob_use: " + str(manual_prob_use))
+            print("prob_deviation_sum: " + str(prob_deviation_sum))
+            print("default_data_counter: " + str(default_data_counter))
+            print("step_counter: "+str(step_counter))
             # step the environment and get new measurements
-            send_action(action)
+            send_action(action,request_id)
             # add reward to rewards for a later use in the training step
             rewards.append(reward)
             step_counter += 1  #TODO: this is for tests
@@ -186,7 +191,7 @@ def main():
                 update_weights = True
 
             #TODO: sleep here?
-            time.sleep(1)
+            time.sleep(0.05)
 
             if is_dead or update_weights:
                 #UPDATE MODEL:

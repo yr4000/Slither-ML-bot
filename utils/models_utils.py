@@ -7,6 +7,7 @@ import numpy as np
 import math
 import json
 import time
+from datetime import datetime
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = 32
@@ -47,7 +48,7 @@ def get_observation():
     except:
         data = get_default_data()
         default = 1
-    return data["observation"], data["score"], data["is_dead"], default
+    return data["observation"], data["score"], data["is_dead"],data['message_id'], default
 
 #TODO: temporary solution, need to fix
 def get_default_data():
@@ -55,11 +56,12 @@ def get_default_data():
         'observation': [0 for i in range(400)],
         'score': 0,
         'is_dead': False,
+        'message_id': 0
     }
 
 #TODO: in case of failure send boolean
-def send_action(index):
-    action = choose_action(index)
+def send_action(index, request_id):
+    action = choose_action(index,request_id)
     with open('action.json', 'w') as outfile:
         json.dump(action, outfile)
     return True
@@ -68,10 +70,12 @@ def send_action(index):
 #the cast to int is needed because numpy types can't be converted to json:
 #https://stackoverflow.com/questions/11942364/typeerror-integer-is-not-json-serializable-when-serializing-json-in-python/11942689#11942689
 #output: action: the slice the bot will move towards, do_accelerate: 0 for no, 1 for yes
-def choose_action(index):
+def choose_action(index,request_id):
+    time = datetime.now().time()
     return {
         'action': int(index%SLICES_NO),
-        'do_accelerate': int(index//SLICES_NO)
+        'do_accelerate': int(index//SLICES_NO),
+        'request_id': request_id
     }
 
 #a simple reward function to begin with
@@ -85,10 +89,10 @@ def get_reward(score_arr,is_dead):
 #    return reward
 
 def wait_for_game_to_start():
-    obsrv, score, is_dead, default  = get_observation()
+    obsrv, score, is_dead, request_id, default  = get_observation()
     while(is_dead):
         time.sleep(0.5)
-        obsrv, score, is_dead, default = get_observation()
+        obsrv, score, is_dead, request_id, default = get_observation()
 
 
 

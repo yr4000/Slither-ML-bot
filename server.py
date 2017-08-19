@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, Response,jsonify
 from flask_cors import CORS, cross_origin
-import random, json
-import math
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 cors = CORS(app)        #This is needed for the server to be able to send responses
@@ -16,6 +16,9 @@ def output():
 @app.route('/model',methods = ['POST'])
 def ask_model():
     data = request.get_json(force=True)
+
+    print("Request "+str(data['message_id'])+' sent in: '+str(data['hours'])+':'+str(data['minutes'])+':'+str(data['seconds']))
+
     with open('observation.json', 'w') as outfile:
         json.dump(data, outfile)
     #print("data: " + str(data) + '\n')
@@ -25,8 +28,8 @@ def ask_model():
     #print("Snake: "+ str(data['snake']) + '\n')
     #print("input: " + str(data['input']) + '\n')
 
-    #TODO: add sleep?
-    print("x: "+str(data['x']) + ", y: " + str(data['y']) + ", r: " + str(data['r']) + "\n")
+
+    # TODO: add sleep? not a good idea since there si already a lag
 
     #gets action from file
     try:
@@ -45,7 +48,9 @@ def ask_model():
     res['y'] = data['r']*math.sin(teta)
     '''
 
-    print(res)
+    #print(res)
+    time = datetime.now().time()
+    print("Responded to request "+str(data['message_id'])+' in: '+str(time.hour)+':'+str(time.minute)+':'+str(time.second))
     return jsonify(res)
 
 
