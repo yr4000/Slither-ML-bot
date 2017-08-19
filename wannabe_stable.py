@@ -143,7 +143,6 @@ def main():
 
 
         while step_counter < MAX_GAMES:
-            wait_for_game_to_start()
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default = get_observation()  # get observation
             default_data_counter += default
@@ -205,7 +204,7 @@ def main():
                 rewards_sums = np.cumsum(rewards[::-1])
                 # normalize prizes and reverse
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
-                rewards_sums -= np.mean(rewards)
+                rewards_sums -= np.mean(rewards_sums)
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
                 modified_rewards_sums = np.reshape(rewards_sums, [1, len(rewards_sums)])
                 # modify actions_booleans to be an array of booleans
@@ -247,6 +246,8 @@ def main():
                 # nullify relevant vars and updates episode number.
                 raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
                 manual_prob_use = 0
+
+                wait_for_game_to_start()
 
 
 
