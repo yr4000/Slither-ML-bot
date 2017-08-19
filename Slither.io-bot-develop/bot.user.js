@@ -1038,7 +1038,7 @@ var bot = window.bot = (function() {
             bot.MAP_R = window.grd * 0.98
             bot.MID_X = window.grd
             bot.MID_Y = window.grd
-            if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
+            if (window.snake != null && canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
                 Math.pow(bot.MAP_R - 750, 2)){
                 bot.markEdge();
                 }
@@ -1079,7 +1079,7 @@ var bot = window.bot = (function() {
                             };
                             index = bot.getIndexFromXY(point.x,point.y);
                         }
-                        if (!(index < 0)){
+                        if (!((index < 0) || index > bot.mapSize**2)){
                             bot.label_map[index] = -1;
                         }
                     }
@@ -1094,7 +1094,7 @@ var bot = window.bot = (function() {
             //calculates the size of the foods near a point on label_map
             for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
                 index = bot.getIndexFromXY(window.foods[i].xx,window.foods[i].yy);
-                if(index<0){
+                if(index < 0 || index > bot.mapSize**2){
                     continue;
                 }
                 bot.label_map[index] += window.foods[i].sz;
@@ -1124,7 +1124,7 @@ var bot = window.bot = (function() {
             var index = -1;
             for(var i = 0; i < window.snake.pts.length; i++){
                 index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
-                if(index<0){
+                if(index < 0 || index > bot.mapSize**2){
                     continue;
                 }
                 bot.label_map[index] = 0;

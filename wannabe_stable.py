@@ -118,7 +118,7 @@ def main():
     prob_deviation_sum = 0
     default_data_counter = 0  # counts number of exceptions in reading the observations' file (and getting a default data)
     step_counter = 0        #TODO: for tests
-
+    obsrv = []
     #variables for evaluation:
 
 
@@ -144,7 +144,10 @@ def main():
 
         while step_counter < MAX_GAMES:
             #get data and process score to reward
+            prev_obsrv = obsrv
             obsrv, score, is_dead, request_id, default = get_observation()  # get observation
+            if prev_obsrv == obsrv:
+                continue
             default_data_counter += default
             is_dead = False         #TODO: for debug
             raw_scores.append(score)
