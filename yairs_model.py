@@ -142,7 +142,6 @@ def main():
 
 
         while step_counter < MAX_GAMES:
-            wait_for_game_to_start()
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
 
@@ -153,7 +152,7 @@ def main():
             default_data_counter += default_obsrv
 
             #TODO: simple reward function
-            reward = get_reward(raw_scores, is_dead)
+            #reward = get_reward(raw_scores, is_dead)
 
             #TODO: for debug
             vars = sess.run(tvars)
@@ -185,7 +184,7 @@ def main():
             # step the environment and get new measurements
             send_action(action, request_id)
             # add reward to rewards for a later use in the training step
-            rewards.append(reward)
+            #rewards.append(reward)
             step_counter += 1  #TODO: this is for tests
 
             #TODO: temporary, change to something that make sense...
@@ -199,15 +198,17 @@ def main():
                 #UPDATE MODEL:
 
                 #TODO: currently doesn't work
-                '''
                 #calculate rewards from raw scores:
                 rewards = calc_reward_from_raw(raw_scores)
+
                 '''
                 # create the rewards sums of the reversed rewards array
                 rewards_sums = np.cumsum(rewards[::-1])
                 # normalize prizes and reverse
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
-                rewards_sums -= np.mean(rewards)
+                '''
+
+                rewards_sums = rewards - np.mean(rewards)
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
                 modified_rewards_sums = np.reshape(rewards_sums, [1, len(rewards_sums)])
                 # modify actions_booleans to be an array of booleans
@@ -215,6 +216,8 @@ def main():
                 actions_booleans = actions_booleans == 1
 
                 #TODO: showind process results for debugging:
+                print("rewards: "+ str(rewards))
+                print("rewards_sums: " + str(rewards_sums))
                 fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
                 pi_res = sess.run(pi, feed_dict={observations: states, actions_mask: actions_booleans,
@@ -249,6 +252,8 @@ def main():
                 # nullify relevant vars and updates episode number.
                 raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
                 manual_prob_use = 0
+
+                wait_for_game_to_start()
 
 
 
