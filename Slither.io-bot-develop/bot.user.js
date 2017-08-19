@@ -1030,7 +1030,7 @@ var bot = window.bot = (function() {
             bot.restartLabelMap(bot.mapSize);
             bot.updateByEdge();
             //bot.labelMapBySelf();
-            //bot.labelMapByFoods();
+            bot.labelMapByFoods();
             bot.lableMapBySnakes();
         },
 
@@ -1039,7 +1039,7 @@ var bot = window.bot = (function() {
             bot.MID_X = window.grd
             bot.MID_Y = window.grd
             if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
-                Math.pow(bot.MAP_R - 500, 2)){
+                Math.pow(bot.MAP_R - 750, 2)){
                 bot.markEdge();
                 }
         },
@@ -1048,15 +1048,15 @@ var bot = window.bot = (function() {
             console.log('entered markEdge')
             for(var i = 0 ; i < bot.mapSize**2 ; i++){
                 ind_x = ((i % bot.mapSize) * bot.offsetSize) + window.snake.xx;
-                ind_y = (Math.floor(i / bot.mapSize) * bot.offsetSize) + window.snake.yy;
+                ind_y = window.snake.yy - (Math.floor(i / bot.mapSize) * bot.offsetSize);
                 //var p = bot.getPointFromIndex(i);
-                /*if(i%80 == 0){
+                if(i%200 == 0){
                     console.log('ind_x: ' + ind_x + ' ind_y: ' + ind_y)
                     console.log('dist: ' + canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y))
-                    console.log('radius: ' + Math.pow(bot.MAP_R - 100, 2))
-                }*/
+                    console.log('radius: ' + Math.pow(bot.MAP_R - 200, 2))
+                }
                 if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y) >
-                    Math.pow(bot.MAP_R - 100, 2)){
+                    Math.pow(bot.MAP_R - 200, 2)){
                     //console.log('updating label_map[' + i + ']')
                     bot.label_map[i] = -1;
                 }
@@ -1100,19 +1100,20 @@ var bot = window.bot = (function() {
                 bot.label_map[index] += window.foods[i].sz;
             }
             //label each point in label_map
+
             for(i = 0; i<bot.label_map.length; i++){
                 if(bot.label_map[i] == 0){
-                    bot.label_map[i] += 0;
+                    bot.label_map[i] = 0;
                 }
                 else if(bot.label_map[i] < bot.smallAmountOfFood){
-                    bot.label_map[i] += 1;
+                    bot.label_map[i] = 1;
 
                 }
                 else if(bot.label_map[i] < bot.mediumAmountOfFood){
-                    bot.label_map[i] += 2;
+                    bot.label_map[i] = 2;
                 }
                 else{
-                    bot.label_map[i] += 3;
+                    bot.label_map[i] = 3;
                 }
             }
         },
