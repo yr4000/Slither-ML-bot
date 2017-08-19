@@ -1029,7 +1029,7 @@ var bot = window.bot = (function() {
         },
 
         markEdge: function(){
-            for(int i= 0 ; i < bot.mapSize ; i++){
+            for(var i= 0 ; i < bot.mapSize ; i++){
                 ind_x = ((i % bot.mapSize) * offsetSize) + window.snake.xx;
                 ind_y = (Math.floor(i / bot.mapSize) * offsetSize) + window.snake.yy;
                 if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y) >
@@ -1037,7 +1037,7 @@ var bot = window.bot = (function() {
                 }
             }
 
-        }
+        },
 
         //Updates all the points in label_map which are close to enemy snakes
         lableMapBySnakes: function(){
