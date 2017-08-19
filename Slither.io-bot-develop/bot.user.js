@@ -1028,23 +1028,37 @@ var bot = window.bot = (function() {
 
         updateLabelMap: function () {
             bot.restartLabelMap(bot.mapSize);
-            /*
-            if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
-                Math.pow(bot.MAP_R - 500, 2)){
-                markEdge();
-                }
-            */
+            bot.updateByEdge();
             //bot.labelMapBySelf();
-            bot.labelMapByFoods();
+            //bot.labelMapByFoods();
             bot.lableMapBySnakes();
         },
 
+        updateByEdge: function(){
+            bot.MAP_R = window.grd * 0.98
+            bot.MID_X = window.grd
+            bot.MID_Y = window.grd
+            if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
+                Math.pow(bot.MAP_R - 500, 2)){
+                bot.markEdge();
+                }
+        },
+
         markEdge: function(){
-            for(var i= 0 ; i < bot.mapSize ; i++){
-                ind_x = ((i % bot.mapSize) * offsetSize) + window.snake.xx;
-                ind_y = (Math.floor(i / bot.mapSize) * offsetSize) + window.snake.yy;
+            console.log('entered markEdge')
+            for(var i = 0 ; i < bot.mapSize**2 ; i++){
+                ind_x = ((i % bot.mapSize) * bot.offsetSize) + window.snake.xx;
+                ind_y = (Math.floor(i / bot.mapSize) * bot.offsetSize) + window.snake.yy;
+                //var p = bot.getPointFromIndex(i);
+                /*if(i%80 == 0){
+                    console.log('ind_x: ' + ind_x + ' ind_y: ' + ind_y)
+                    console.log('dist: ' + canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y))
+                    console.log('radius: ' + Math.pow(bot.MAP_R - 100, 2))
+                }*/
                 if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y) >
-                    Math.pow(bot.MAP_R - 500, 2)){
+                    Math.pow(bot.MAP_R - 100, 2)){
+                    //console.log('updating label_map[' + i + ']')
+                    bot.label_map[i] = -1;
                 }
             }
 
@@ -1087,18 +1101,18 @@ var bot = window.bot = (function() {
             }
             //label each point in label_map
             for(i = 0; i<bot.label_map.length; i++){
-                if(bot.label_map[i] ==0){
-                    bot.label_map[i] = 0;
+                if(bot.label_map[i] == 0){
+                    bot.label_map[i] += 0;
                 }
                 else if(bot.label_map[i] < bot.smallAmountOfFood){
-                    bot.label_map[i] = 1;
+                    bot.label_map[i] += 1;
 
                 }
                 else if(bot.label_map[i] < bot.mediumAmountOfFood){
-                    bot.label_map[i] = 2;
+                    bot.label_map[i] += 2;
                 }
                 else{
-                    bot.label_map[i] = 3;
+                    bot.label_map[i] += 3;
                 }
             }
         },
