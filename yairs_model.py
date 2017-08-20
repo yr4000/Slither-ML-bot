@@ -107,7 +107,7 @@ init = tf.global_variables_initializer()
 #init2 = tf.initialize_all_variables()
 def main():
     #variables used for models logics
-    raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
+    raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
     episode_number = 0
     update_weights = False  # if to much time passed, update the weights even if the game is not finished
     grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
@@ -148,7 +148,7 @@ def main():
             raw_scores.append(score)
 
             # TODO: for debug
-            is_dead = False
+            #is_dead = False
             default_data_counter += default_obsrv
 
             #TODO: simple reward function
@@ -181,6 +181,7 @@ def main():
             print("prob_deviation_sum: " + str(prob_deviation_sum))
             print("default_data_counter: " + str(default_data_counter))
             print("step_counter: "+str(step_counter))
+
             # step the environment and get new measurements
             send_action(action, request_id)
             # add reward to rewards for a later use in the training step
@@ -188,7 +189,7 @@ def main():
             step_counter += 1  #TODO: this is for tests
 
             #TODO: temporary, change to something that make sense...
-            if(step_counter % 10 ==0):
+            if(step_counter % STEPS_UNTIL_BACKPROP ==0):
                 update_weights = True
 
             #TODO: sleep here?
@@ -197,27 +198,26 @@ def main():
             if is_dead or update_weights:
                 #UPDATE MODEL:
 
-                #TODO: currently doesn't work
                 #calculate rewards from raw scores:
-                rewards = calc_reward_from_raw(raw_scores)
+                processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
 
                 '''
                 # create the rewards sums of the reversed rewards array
                 rewards_sums = np.cumsum(rewards[::-1])
                 # normalize prizes and reverse
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
-                '''
-
                 rewards_sums = rewards - np.mean(rewards)
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
-                modified_rewards_sums = np.reshape(rewards_sums, [1, len(rewards_sums)])
+                '''
+
+
+                modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
                 # modify actions_booleans to be an array of booleans
                 actions_booleans = np.array(actions_booleans)
                 actions_booleans = actions_booleans == 1
 
                 #TODO: showind process results for debugging:
-                print("rewards: "+ str(rewards))
-                print("rewards_sums: " + str(rewards_sums))
+                print("processed_rewards: " + str(processed_rewards))
                 fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
                 pi_res = sess.run(pi, feed_dict={observations: states, actions_mask: actions_booleans,
@@ -250,7 +250,7 @@ def main():
                     print('auto-saved weights successfully.')
 
                 # nullify relevant vars and updates episode number.
-                raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
+                raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
                 manual_prob_use = 0
 
                 wait_for_game_to_start()

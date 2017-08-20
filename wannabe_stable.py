@@ -1,8 +1,6 @@
 from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
 import pickle as pkl
-import numpy as np
-import tensorflow as tf
 import os
 import time
 
@@ -110,7 +108,7 @@ init = tf.global_variables_initializer()
 #init2 = tf.initialize_all_variables()
 def main():
     #variables used for models logics
-    raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
+    raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
     episode_number = 0
     update_weights = False  # if to much time passed, update the weights even if the game is not finished
     grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
@@ -146,12 +144,9 @@ def main():
 
         while step_counter < MAX_GAMES:
             #get data and process score to reward
-            prev_obsrv = obsrv
             obsrv, score, is_dead, request_id, default = get_observation()  # get observation
-            if prev_obsrv == obsrv:
-                continue
             default_data_counter += default
-            is_dead = False         #TODO: for debug
+            #is_dead = False         #TODO: for debug
             raw_scores.append(score)
 
             #TODO: simple reward function
@@ -187,7 +182,7 @@ def main():
             # step the environment and get new measurements
             send_action(action,request_id)
             # add reward to rewards for a later use in the training step
-            rewards.append(reward)
+            #rewards.append(reward)
             step_counter += 1  #TODO: this is for tests
 
             #TODO: temporary, change to something that make sense...
@@ -247,7 +242,7 @@ def main():
                     print('auto-saved weights successfully.')
 
                 # nullify relevant vars and updates episode number.
-                raw_scores, states, actions_booleans, rewards = [BEGINING_SCORE], [], [], []
+                raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
                 manual_prob_use = 0
 
                 wait_for_game_to_start()
