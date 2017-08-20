@@ -1,4 +1,5 @@
 import logging
+import time
 LOG_FILENAME = 'ML.log'
 SPACER = '======================================================================================================================='
 
@@ -7,9 +8,11 @@ class Logger:
 		if(file_name == ''):
 			self.file_name = LOG_FILENAME
 		else:
-			self.file_name = file_name
+			t = time.gmtime()
+			self.file_name = file_name + '_' + str(t.tm_mday) + '_' + str(t.tm_mon) + '_' + str(t.tm_year) +\
+							 '_' + str(t.tm_hour) + '_' + str(t.tm_min) + '_' + str(t.tm_sec) + '.log'
 		return
-	def mylogger (self, message, type='info'):
+	def write_to_log (self, message, type='info'):
 		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=self.file_name, level=logging.DEBUG)
 		if (type == 'info'):
 			logging.info(message)
@@ -20,7 +23,7 @@ class Logger:
 		else:
 			logging.info('unkown type: ' + type + ": " + message)
 
-	def mylogger_spacer (self):
+	def write_spacer (self):
 		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=self.file_name, level=logging.DEBUG)
 		logging.info("\n" + SPACER)
 
