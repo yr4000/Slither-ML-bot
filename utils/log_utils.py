@@ -3,10 +3,14 @@ LOG_FILENAME = 'ML.log'
 SPACER = '======================================================================================================================='
 
 class Logger:
-	def __init__(self):
+	def __init__(self,file_name = ''):
+		if(file_name == ''):
+			self.file_name = LOG_FILENAME
+		else:
+			self.file_name = file_name
 		return
 	def mylogger (self, message, type='info'):
-		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=LOG_FILENAME, level=logging.DEBUG)
+		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=self.file_name, level=logging.DEBUG)
 		if (type == 'info'):
 			logging.info(message)
 		elif (type == 'warning'):
@@ -17,7 +21,7 @@ class Logger:
 			logging.info('unkown type: ' + type + ": " + message)
 
 	def mylogger_spacer (self):
-		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=LOG_FILENAME, level=logging.DEBUG)
+		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=self.file_name, level=logging.DEBUG)
 		logging.info("\n" + SPACER)
 
 
