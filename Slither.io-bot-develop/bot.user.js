@@ -975,6 +975,12 @@ var bot = window.bot = (function() {
 
         },
 
+        everyML: function () {
+            bot.MAP_R = window.grd * 0.98;
+            bot.MID_X = window.grd;
+            bot.MID_Y = window.grd;
+        },
+
         //This function gets the players current score
         //TODO: when dies, doesn't send the last score. fortunatlly there is a function here that does that (something with get lastScore...)
         getMyScore: function () {
@@ -991,13 +997,6 @@ var bot = window.bot = (function() {
         //n MUST BE EVEN!!!
         restartLabelMap: function(n){
             bot.label_map = new Array(Math.pow(n,2)).fill(0);
-             /*
-            var res = {};
-            for( i =0; i <(Math.pow(n,2)); i++){
-                res[i] = 0;
-            }
-            return res;
-            */
         },
 
         //gets x and y coordinates of a point in game unit, and return the closest index
@@ -1017,35 +1016,85 @@ var bot = window.bot = (function() {
 
         getIndexFromXY: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
+            var index = -1;
             if((Math.abs(x - head[0]) > bot.mapSize/2 * bot.offsetSize) || (Math.abs(y - head[1]) > bot.mapSize/2 * bot.offsetSize)){
                 return -1;
             }
             var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
                 bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize))];
-            var index = bot.mapSize*offsets[1] + offsets[0];
+            index = bot.mapSize*offsets[1] + offsets[0];
             return index;
         },
 
         updateLabelMap: function () {
             bot.restartLabelMap(bot.mapSize);
-            bot.updateByEdge();
             //bot.labelMapBySelf();
             bot.labelMapByFoods();
             bot.lableMapBySnakes();
+            bot.labelByEdge();
         },
 
-        updateByEdge: function(){
-            bot.MAP_R = window.grd * 0.98
-            bot.MID_X = window.grd
-            bot.MID_Y = window.grd
+        labelByEdge: function(){
             if (window.snake != null && canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, window.snake.xx, window.snake.yy) >
                 Math.pow(bot.MAP_R - 750, 2)){
                 bot.markEdge();
                 }
         },
 
-        markEdge: function(){
-            console.log('entered markEdge')
+        markEdge: function () {
+            //console.log('entered to markEdge');
+            var r_location = [];
+            var teta = 0;
+            var cp = {};     //current point
+            var to = 0;     //teta offset
+            var index = 0;
+
+            //get my location relatively to map center
+            //TODO: why do we have to reverse the y computation all the time??
+            r_location = [window.snake.xx - bot.MID_X, bot.MID_Y - window.snake.yy];
+            //get teta using atan2, notice it gets the y coordinate first
+            teta = Math.atan2(r_location[1],r_location[0]);
+            //get closest point to me on the edge
+            cp = {
+                x: Math.cos(teta)*bot.MAP_R  + bot.MID_X,
+                y: bot.MID_Y - Math.sin(teta)*bot.MAP_R
+            };
+            index = bot.getIndexFromXY(cp.x, cp.y);
+
+            bot.label_map[index] = -1;
+            //calculate offset to move along the edge
+            to = bot.offsetSize/bot.MAP_R;
+            //mark clockwise and the counter clockwise.
+            bot.markClockwise(teta,to);
+            bot.markClockwise(teta,-to);
+            //console.log('finished to markEdge');
+        },
+
+        //input: the teta to current point and teta offset
+        markClockwise: function (teta, to) {
+            //console.log('started markClockwise');
+            var index = 0;
+            var k = 1;
+            var np = {};        //next point
+            //go clockwise from current and label points on label_map, until you are out of label_map
+            while(index >= 0){
+                //get new np using offset
+                if(k != 1){
+                    bot.label_map[index] = -1;
+                }
+                np = {
+                    x: Math.cos(teta + k*to)*bot.MAP_R + bot.MID_X,
+                    y: bot.MID_Y - Math.sin(teta + k*to)*bot.MAP_R
+                };
+                index = bot.getIndexFromXY(np.x,np.y);
+
+                k++;
+            }
+            //console.log('finished markClockwise');
+        },
+
+        markEdge_old: function(){
+            console.log('entered markEdge');
             for(var i = 0 ; i < bot.mapSize**2 ; i++){
                 ind_x = ((i % bot.mapSize) * bot.offsetSize) + window.snake.xx;
                 ind_y = window.snake.yy - (Math.floor(i / bot.mapSize) * bot.offsetSize);
@@ -1625,6 +1674,7 @@ var userInterface = window.userInterface = (function() {
                 bot.isBotRunning = true;
                 //switch between ML mode an AI mode
                 if(bot.ML_mode){
+                    bot.everyML();
                     bot.updateLabelMap();
                     if(window.visualDebugging){
                         bot.drawNet();
