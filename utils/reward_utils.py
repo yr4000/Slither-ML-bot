@@ -3,7 +3,7 @@ import numpy as np
 DISCOUNT_FACTOR = 0.95
 BACKWARDS_RELEVANCY_WINDOW = 10
 BOOSTING_FACTOR = 3.0
-PUNISHMENT_FOR_DEATH = -50
+PUNISHMENT_FOR_DEATH = -100
 NO_REWARD_PENALTY = -0.05
 
 #boosts by BOOSTING_FACTOR all the BACKWARDS_RELEVANCY_WINDOW rewards before an
@@ -20,6 +20,7 @@ def boost(reward_indicator, accel_penalty_indicator, processed_rewards):
     return np.multiply(boosting_indicator , processed_rewards)
 
 #calculates rewards per step from the score per step array
+#TODO: need to take care when the array is at size 2
 def calc_reward_from_raw(score_arr , is_dead):
     if (len(score_arr) == 1):
         return np.array([0]) # worst case TODO : i think should never happen im model
