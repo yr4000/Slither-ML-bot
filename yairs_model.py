@@ -1,5 +1,7 @@
 from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
+from utils.log_utils import *
+from utils.plot_utils import plot_graph
 import pickle as pkl
 import os
 
@@ -23,7 +25,7 @@ keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
 
 #Model constants
 MAX_GAMES = 10000
-STEPS_UNTIL_BACKPROP = 50
+STEPS_UNTIL_BACKPROP = 500
 BATCH_SIZE = 50
 
 #Load and save constants
@@ -33,6 +35,9 @@ LOAD_WEIGHTS = False
 
 #other constants:
 BEGINING_SCORE = 10
+
+#initialize logger:
+logger = Logger('Test')
 
 
 
@@ -119,6 +124,9 @@ def main():
     step_counter = 0        #TODO: for tests
 
     #variables for evaluation:
+    best_average_score = 0
+    current_average_score = 0
+    average_scores_along_the_game = []
 
 
     with tf.Session() as sess:
@@ -141,7 +149,7 @@ def main():
             print("created weights file sucessfully!")
 
 
-        while step_counter < MAX_GAMES:
+        while episode_number < MAX_GAMES:
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
 
@@ -174,6 +182,7 @@ def main():
             # index of the selected action
             action = np.argmax(actions_booleans[-1])
             #TODO: for debuggig
+            '''
             #print("action_probs: " + str(action_probs))
             print("observation got: " + str(obsrv))
             print("action chosen: " + str(action))
@@ -181,6 +190,11 @@ def main():
             print("prob_deviation_sum: " + str(prob_deviation_sum))
             print("default_data_counter: " + str(default_data_counter))
             print("step_counter: "+str(step_counter))
+            '''
+            logger.write_to_log("observation got: " + str(obsrv))
+            #logger.write_to_log("action_probs: " + str(action_probs))
+            logger.write_to_log("action chosen: " + str(action))
+
 
             # step the environment and get new measurements
             send_action(action, request_id)
@@ -195,11 +209,18 @@ def main():
             #TODO: sleep here?
             time.sleep(0.05)
 
-            if is_dead or update_weights:
+            if (is_dead or update_weights) and len(raw_scores)>2:
                 #UPDATE MODEL:
 
                 #calculate rewards from raw scores:
                 processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
+
+                # TODO: for debug:
+                if(is_dead):
+                    print('just died!')
+                    print("processed_rewards: " + str(processed_rewards))
+                logger.write_to_log("raw_score: " +str(raw_scores))
+                logger.write_to_log("processed_rewards: " + str(processed_rewards))
 
                 '''
                 # create the rewards sums of the reversed rewards array
@@ -210,14 +231,12 @@ def main():
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
                 '''
 
-
                 modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
                 # modify actions_booleans to be an array of booleans
                 actions_booleans = np.array(actions_booleans)
                 actions_booleans = actions_booleans == 1
 
                 #TODO: showind process results for debugging:
-                print("processed_rewards: " + str(processed_rewards))
                 fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
                 pi_res = sess.run(pi, feed_dict={observations: states, actions_mask: actions_booleans,
@@ -234,8 +253,18 @@ def main():
                 episode_number += 1
                 update_weights = False
 
+                #evaluation:
+                current_average_score = np.average(raw_scores)
+                average_scores_along_the_game.append(current_average_score)
+                print("average score after %d steps: %f" %(step_counter, current_average_score))
+                logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
+
+                #nullify step_counter:
+                step_counter = 0
+
                 # Do the training step
                 if (episode_number % BATCH_SIZE == 0):
+                    print("taking the update step")
                     grad_dict = {Gradients_holder[i]: grads_sums[i] for i in range(VAR_NO)}
                     #TODO choose learning rate?
                     # take the train step
@@ -243,17 +272,29 @@ def main():
                     #nullify grads_sum
                     grads_sums = get_empty_grads_sums()
 
-                    #TODO: we don't want to save every time we update, this is for test and will be moved
-                    # manual save
-                    with open(WEIGHTS_FILE, 'wb') as f:
+                #TODO: we don't want to save every time we update, this is for test and will be moved
+                # evaluate and save:
+                if (best_average_score < current_average_score):
+                    best_average_score = current_average_score
+                    # save with shmickle
+                    with open(BEST_WEIGHTS,'wb') as f:
                         pkl.dump(sess.run(tvars), f, protocol=2)
-                    print('auto-saved weights successfully.')
+                    print('Saved best weights successfully!')
+                    print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
+                # manual save
+                with open(WEIGHTS_FILE, 'wb') as f:
+                    pkl.dump(sess.run(tvars), f, protocol=2)
+                #print('auto-saved weights successfully.')
 
                 # nullify relevant vars and updates episode number.
                 raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
                 manual_prob_use = 0
 
                 wait_for_game_to_start()
+
+            logger.write_spacer()
+
+    plot_graph(average_scores_along_the_game,"test","test.png")
 
 
 
