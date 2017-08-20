@@ -20,16 +20,17 @@ def boost(reward_indicator, accel_penalty_indicator, processed_rewards):
     return np.multiply(boosting_indicator , processed_rewards)
 
 #calculates rewards per step from the score per step array
-def calc_reward_from_raw(score_arr):
+def calc_reward_from_raw(score_arr , is_dead):
     if (len(score_arr) == 1):
         return np.array([0]) # worst case TODO : i think should never happen im model
 
     rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
-    #rewards[len(rewards)-1] = PUNISHMENT_FOR_DEATH      #TODO: I am not sure this is true, we shouldn't update only in death
+    if (is_dead):
+        rewards[len(rewards)-1] = PUNISHMENT_FOR_DEATH      #TODO: I am not sure this is true, we shouldn't update only in death
 
     #"penalize" steps with reward == 0 with negative reward
     rewards = np.add(rewards, np.multiply((rewards == 0).astype(int), NO_REWARD_PENALTY))
-    print("before sidcount:{}".format(rewards))
+    #compute discounted rewards
     discounted_formula = np.frompyfunc(lambda x, y: DISCOUNT_FACTOR * x + y, 2, 1)
     cumulative_discounted_rewards= np.flip(
                 discounted_formula.accumulate(np.flip(rewards, 0), dtype=np.object).astype(np.double),0)
@@ -37,6 +38,10 @@ def calc_reward_from_raw(score_arr):
     #boost relevant rewards
     boosted_processed_rewards = boost( (rewards > 0) ,(rewards < NO_REWARD_PENALTY)
                                        , cumulative_discounted_rewards)
+    #normalize
+    boosted_processed_rewards = np.divide(boosted_processed_rewards, np.std(boosted_processed_rewards))
+    boosted_processed_rewards -= np.mean(boosted_processed_rewards)
+
     return boosted_processed_rewards
 
 def main():

@@ -1,6 +1,8 @@
 from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
 import pickle as pkl
+import numpy as np
+import tensorflow as tf
 import os
 import time
 
@@ -198,18 +200,16 @@ def main():
             if is_dead or update_weights:
                 #UPDATE MODEL:
 
-                #TODO: currently doesn't work
-                '''
                 #calculate rewards from raw scores:
-                rewards = calc_reward_from_raw(raw_scores)
-                '''
+                processed_rewards = calc_reward_from_raw(raw_scores, is_dead)
+                #TODO:delte this when it works
+                ''' 
                 # create the rewards sums of the reversed rewards array
                 rewards_sums = np.cumsum(rewards[::-1])
                 # normalize prizes and reverse
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
-                rewards_sums -= np.mean(rewards_sums)
-                rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
-                modified_rewards_sums = np.reshape(rewards_sums, [1, len(rewards_sums)])
+                '''
+                modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
                 # modify actions_booleans to be an array of booleans
                 actions_booleans = np.array(actions_booleans)
                 actions_booleans = actions_booleans == 1
