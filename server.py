@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, Response,jsonify
 from flask_cors import CORS, cross_origin
 import json
 from datetime import datetime
+import time as t
 
 app = Flask(__name__)
 cors = CORS(app)        #This is needed for the server to be able to send responses
@@ -30,6 +31,8 @@ def ask_model():
 
 
     # TODO: add sleep? not a good idea since there si already a lag
+    #t.sleep(0.05)
+
 
     #gets action from file
     try:
@@ -37,7 +40,8 @@ def ask_model():
             res = json.load(json_data)
     except:
         res = {'action': 0,
-               'do_accelerate': 0}        #TODO: change to a better default
+               'do_accelerate': 0,
+               'request_id': -1}        #TODO: change to a better default
 
     # calculate angle using r and x
 
