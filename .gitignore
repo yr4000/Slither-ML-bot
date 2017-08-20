@@ -3,4 +3,4 @@
 *.json
 *.pkl
 *.log
-#.png
+*.png
