@@ -44,7 +44,7 @@ def get_observation():
     try:
         with open('observation.json') as json_data:
             data = json.load(json_data)
-            default = 0
+        default = 0
     except:
         data = get_default_data()
         default = 1
@@ -56,7 +56,7 @@ def get_default_data():
         'observation': [0 for i in range(400)],
         'score': 0,
         'is_dead': False,
-        'message_id': 0
+        'message_id': -1
     }
 
 #TODO: in case of failure send boolean
