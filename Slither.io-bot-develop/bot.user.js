@@ -404,6 +404,12 @@ var bot = window.bot = (function() {
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
+        emptyLabel: 25,
+        selfLabel: 50,
+        enemyLabel: 0,
+        smallFoodLabel: 100,
+        mediumFoodLabel: 150,
+        largeFoodLabel: 200,
 
         //TODO: ML debug vriables
         message_id: 1,
@@ -996,7 +1002,7 @@ var bot = window.bot = (function() {
         //creats an nXn label-map, where each pixel in it is at size offsetSize^2
         //n MUST BE EVEN!!!
         restartLabelMap: function(n){
-            bot.label_map = new Array(Math.pow(n,2)).fill(0);
+            bot.label_map = new Array(Math.pow(n,2)).fill(bot.emptyLabel);
         },
 
         //gets x and y coordinates of a point in game unit, and return the closest index
@@ -1028,8 +1034,8 @@ var bot = window.bot = (function() {
 
         updateLabelMap: function () {
             bot.restartLabelMap(bot.mapSize);
-            //bot.labelMapBySelf();
             bot.labelMapByFoods();
+            bot.labelMapBySelf();
             bot.lableMapBySnakes();
             bot.labelByEdge();
         },
@@ -1061,7 +1067,7 @@ var bot = window.bot = (function() {
             };
             index = bot.getIndexFromXY(cp.x, cp.y);
 
-            bot.label_map[index] = -1;
+            bot.label_map[index] = bot.enemyLabel;
             //calculate offset to move along the edge
             to = bot.offsetSize/bot.MAP_R;
             //mark clockwise and the counter clockwise.
@@ -1080,7 +1086,7 @@ var bot = window.bot = (function() {
             while(index >= 0){
                 //get new np using offset
                 if(k != 1){
-                    bot.label_map[index] = -1;
+                    bot.label_map[index] = bot.enemyLabel;
                 }
                 np = {
                     x: Math.cos(teta + k*to)*bot.MAP_R + bot.MID_X,
@@ -1129,7 +1135,7 @@ var bot = window.bot = (function() {
                             index = bot.getIndexFromXY(point.x,point.y);
                         }
                         if (!((index < 0) || index > bot.mapSize**2)){
-                            bot.label_map[index] = -1;
+                            bot.label_map[index] = bot.enemyLabel;
                         }
                     }
                 }
@@ -1141,28 +1147,29 @@ var bot = window.bot = (function() {
         labelMapByFoods: function () {
             var index = -1;
             //calculates the size of the foods near a point on label_map
+            var foodSums = new Array(Math.pow(bot.mapSize,2)).fill(0);
             for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
                 index = bot.getIndexFromXY(window.foods[i].xx,window.foods[i].yy);
                 if(index < 0 || index > bot.mapSize**2){
                     continue;
                 }
-                bot.label_map[index] += window.foods[i].sz;
+                foodSums[index] += window.foods[i].sz;
             }
             //label each point in label_map
 
             for(i = 0; i<bot.label_map.length; i++){
-                if(bot.label_map[i] == 0){
-                    bot.label_map[i] = 0;
+                if(foodSums[i] == 0){
+                    bot.label_map[i] = bot.emptyLabel;
                 }
-                else if(bot.label_map[i] < bot.smallAmountOfFood){
-                    bot.label_map[i] = 1;
+                else if(foodSums[i] < bot.smallAmountOfFood){
+                    bot.label_map[i] = bot.smallFoodLabel;
 
                 }
-                else if(bot.label_map[i] < bot.mediumAmountOfFood){
-                    bot.label_map[i] = 2;
+                else if(foodSums[i] < bot.mediumAmountOfFood){
+                    bot.label_map[i] = bot.mediumFoodLabel;
                 }
                 else{
-                    bot.label_map[i] = 3;
+                    foodSums[i] = bot.largeFoodLabel;
                 }
             }
         },
@@ -1170,13 +1177,17 @@ var bot = window.bot = (function() {
         //label label_map by selfs body.
         //TODO: adding && !window.snake.pts[i].dying to the functions mess it up. do not use it until we know what dying means.
         labelMapBySelf: function() {
-            var index = -1;
-            for(var i = 0; i < window.snake.pts.length; i++){
-                index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
-                if(index < 0 || index > bot.mapSize**2){
-                    continue;
+            if(window.snake !== null && window.snake.alive_amt === 1){
+                var index = -1;
+                for(var i = 0; i < window.snake.pts.length; i++){
+                    if(!window.snake.pts[i].dying){
+                        index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
+                        if(index < 0 || index > bot.mapSize**2){
+                            continue;
+                        }
+                        bot.label_map[index] = bot.selfLabel;
+                    }
                 }
-                bot.label_map[index] = 0;
             }
         },
 
@@ -1210,18 +1221,23 @@ var bot = window.bot = (function() {
             var head = [window.snake.xx, window.snake.yy];
             for(var i = 0; i < bot.label_map.length; i++){
                 var p = bot.getPointFromIndex(i,head);
-                if(bot.label_map[i] == -1 ){
+                if(bot.label_map[i] == bot.enemyLabel ){
                     canvasUtil.drawCircle(canvasUtil.circle(p.x, p.y,7),
                                     'red', true);
                     continue;
                 }
-                else if(bot.label_map[i] != 0 ){
+                else if(bot.label_map[i] == bot.selfLabel){
+                    canvasUtil.drawCircle(canvasUtil.circle(p.x, p.y,4),
+                                    'purple', true);
+                    continue;
+                }
+                else if(bot.label_map[i] != bot.emptyLabel ){
                     canvasUtil.drawRect(canvasUtil.rect(p.x, p.y,11,11),
                                         'lawngreen', true);
                     continue;
                 }
                 else{
-                canvasUtil.drawCircle(canvasUtil.circle(p.x, p.y,0.5),'midnightblue', true);
+                    canvasUtil.drawCircle(canvasUtil.circle(p.x, p.y,0.5),'midnightblue', true);
                 }
 
             }
