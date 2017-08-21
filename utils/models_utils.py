@@ -80,19 +80,35 @@ def choose_action(index,request_id):
 
 #a simple reward function to begin with
 def get_reward(score_arr,is_dead):
-    boost_const = 5
+    no_gain_punishement = -5
     death_punishment = -100
+    small_gain_prize = 2
+    medium_gain_prize = 6
+    high_gain_prize = 10
+    rewards = []
+
     if (len(score_arr) == 1):
         return np.array([0]) # worst case TODO : i think should never happen im model
 
-    rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
+    scores_diff = np.diff(score_arr)    #convert raw score to points earned/lost per step
+    for k in scores_diff:
+        if(k<=0):
+            rewards.append(no_gain_punishement)
+        elif(k>0 and k<=5):
+            rewards.append(small_gain_prize)
+        elif(k>5 and k<=15):
+            rewards.append(medium_gain_prize)
+        else:
+            rewards.append(high_gain_prize)
 
+    '''
     #boost positive rewards and decay negative once
     for i in range(len(rewards)):
         if(rewards[i] <= 0):
             rewards[i] -= boost_const
         else:
             rewards[i] += boost_const
+    '''
 
     if (is_dead):
         rewards[len(rewards) - 1] = death_punishment
