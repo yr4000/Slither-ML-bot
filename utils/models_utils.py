@@ -80,13 +80,24 @@ def choose_action(index,request_id):
 
 #a simple reward function to begin with
 def get_reward(score_arr,is_dead):
-    if(is_dead):
-        reward = -100
-    else:
-        reward = score_arr[-1] - score_arr[-2]
+    boost_const = 5
+    death_punishment = -100
+    if (len(score_arr) == 1):
+        return np.array([0]) # worst case TODO : i think should never happen im model
 
-    return -5 if reward == 0 else reward
-#    return reward
+    rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
+
+    #boost positive rewards and decay negative once
+    for i in range(len(rewards)):
+        if(rewards[i] <= 0):
+            rewards[i] -= boost_const
+        else:
+            rewards[i] += boost_const
+
+    if (is_dead):
+        rewards[len(rewards) - 1] = death_punishment
+
+    return rewards
 
 def wait_for_game_to_start():
     obsrv, score, is_dead, request_id, default  = get_observation()
