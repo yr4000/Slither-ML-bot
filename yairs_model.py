@@ -213,8 +213,8 @@ def main():
                 #UPDATE MODEL:
 
                 #calculate rewards from raw scores:
-                #processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
-                processed_rewards = get_reward(raw_scores,is_dead)
+                processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
+                #processed_rewards = get_reward(raw_scores,is_dead)
 
                 # TODO: for debug:
                 if(is_dead):
@@ -223,7 +223,7 @@ def main():
                 logger.write_to_log("raw_score: " +str(raw_scores))
                 logger.write_to_log("processed_rewards: " + str(processed_rewards))
 
-
+                '''
                 # create the rewards sums of the reversed rewards array
                 rewards_sums = np.cumsum(processed_rewards[::-1])
                 # normalize prizes and reverse
@@ -231,9 +231,11 @@ def main():
                 rewards_sums -= np.mean(rewards_sums)
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
                 logger.write_to_log("rewards_sums: " + str(rewards_sums))
+                '''
 
 
-                modified_rewards_sums = np.reshape(rewards_sums, [1, len(processed_rewards)])
+
+                modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
                 # modify actions_booleans to be an array of booleans
                 actions_booleans = np.array(actions_booleans)
                 actions_booleans = actions_booleans == 1
@@ -245,6 +247,8 @@ def main():
                                                        rewards_arr: modified_rewards_sums})
                 loss_res = sess.run(loss, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
+
+                logger.write_to_log("filtered_actions: "+ str(fa_res))
 
 
                 # gradients for current episode
