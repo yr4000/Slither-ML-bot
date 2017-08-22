@@ -24,14 +24,14 @@ KEEP_RATE = 0.8
 keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
 
 #Model constants
-MAX_GAMES = 10000
+MAX_GAMES = 5000
 STEPS_UNTIL_BACKPROP = 500
 BATCH_SIZE = 10
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD_WEIGHTS = False
+LOAD_WEIGHTS = True
 
 #other constants:
 BEGINING_SCORE = 10
@@ -192,8 +192,8 @@ def main():
             print("step_counter: "+str(step_counter))
             '''
             #logger.write_to_log("observation got: " + str(obsrv))
-            logger.write_to_log("action_probs: " + str(action_probs))
-            logger.write_to_log("action chosen: " + str(action))
+            #logger.write_to_log("action_probs: " + str(action_probs))
+            #logger.write_to_log("action chosen: " + str(action))
 
 
             # step the environment and get new measurements
@@ -220,8 +220,8 @@ def main():
                 if(is_dead):
                     print('just died!')
                     print("processed_rewards: " + str(processed_rewards))
-                logger.write_to_log("raw_score: " +str(raw_scores))
-                logger.write_to_log("processed_rewards: " + str(processed_rewards))
+                #logger.write_to_log("raw_score: " +str(raw_scores))
+                #logger.write_to_log("processed_rewards: " + str(processed_rewards))
 
                 #'''
                 # create the rewards sums of the reversed rewards array
@@ -230,7 +230,7 @@ def main():
                 rewards_sums = decrese_rewards(rewards_sums[::-1])
                 rewards_sums -= np.mean(rewards_sums)
                 rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
-                logger.write_to_log("rewards_sums: " + str(rewards_sums))
+                #logger.write_to_log("rewards_sums: " + str(rewards_sums))
                 #'''
 
 
@@ -248,7 +248,7 @@ def main():
                 loss_res = sess.run(loss, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
 
-                logger.write_to_log("filtered_actions: "+ str(fa_res))
+                #logger.write_to_log("filtered_actions: "+ str(fa_res))
 
 
                 # gradients for current episode
@@ -263,7 +263,7 @@ def main():
                 current_average_score = np.average(raw_scores)
                 average_scores_along_the_game.append(current_average_score)
                 print("average score after %d steps: %f" %(step_counter, current_average_score))
-                logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
+                #logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
 
                 #nullify step_counter:
                 step_counter = 0
@@ -298,7 +298,7 @@ def main():
 
                 wait_for_game_to_start()
 
-            logger.write_spacer()
+            #logger.write_spacer()
 
     plot_graph(average_scores_along_the_game,"test","test.png")
 
