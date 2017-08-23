@@ -11,7 +11,7 @@ matplotlib.use('Qt4Agg')
 
 #CNN constants
 OUTPUT_DIM = 64
-INPUT_DIM = 400
+INPUT_DIM = 900
 SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
@@ -24,14 +24,14 @@ KEEP_RATE = 0.8
 keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
 
 #Model constants
-MAX_GAMES = 5000
+MAX_GAMES = 500
 STEPS_UNTIL_BACKPROP = 500
 BATCH_SIZE = 10
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD_WEIGHTS = True
+LOAD_WEIGHTS = False
 
 #other constants:
 BEGINING_SCORE = 10
@@ -215,6 +215,7 @@ def main():
                 #calculate rewards from raw scores:
                 #processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
                 processed_rewards = get_reward(raw_scores,is_dead)
+                #processed_rewards = raw_score_reward(raw_scores,is_dead)
 
                 # TODO: for debug:
                 if(is_dead):
@@ -248,7 +249,7 @@ def main():
                 loss_res = sess.run(loss, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
 
-                #logger.write_to_log("filtered_actions: "+ str(fa_res))
+                logger.write_to_log("filtered_actions: "+ str(fa_res))
 
 
                 # gradients for current episode
@@ -263,7 +264,7 @@ def main():
                 current_average_score = np.average(raw_scores)
                 average_scores_along_the_game.append(current_average_score)
                 print("average score after %d steps: %f" %(step_counter, current_average_score))
-                #logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
+                logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
 
                 #nullify step_counter:
                 step_counter = 0
@@ -298,7 +299,7 @@ def main():
 
                 wait_for_game_to_start()
 
-            #logger.write_spacer()
+                logger.write_spacer()
 
     plot_graph(average_scores_along_the_game,"test","test.png")
 

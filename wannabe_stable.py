@@ -10,7 +10,7 @@ matplotlib.use('Qt4Agg')
 
 #CNN constants
 OUTPUT_DIM = 64
-INPUT_DIM = 400
+INPUT_DIM = 900
 SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
@@ -23,7 +23,7 @@ KEEP_RATE = 0.8
 keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
 
 #Model constants
-MAX_GAMES = 10000
+MAX_GAMES = 5000
 STEPS_UNTIL_BACKPROP = 50
 BATCH_SIZE = 50
 
