@@ -47,6 +47,7 @@ def get_observation():
             data = json.load(json_data)
         default = 0
     except:
+        print("got default data")#todo: delte
         data = get_default_data()
         default = 1
     return data["observation"], data["score"], data["is_dead"],data['message_id'], default

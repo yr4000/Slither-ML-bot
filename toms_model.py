@@ -187,6 +187,7 @@ def main():
 
             if(np.random.binomial(1,EPSILON_FOR_EXPLORATION , 1)[0]): # exploration
                 chosen_actions = pick_random_action_manually(action_probs[0])
+                #TODO : print to logger
             else:#explotation
                 # np.random.multinomial cause problems
                 try:
@@ -214,7 +215,7 @@ def main():
             if(episode_number %WRITE_TO_LOG == 0):
                 #logger.write_to_log("observation got: " + str(obsrv))
                 logger.write_to_log("action_probs: " + str(action_probs))
-                logger.write_to_log("action chosen: " + str(action))
+                #logger.write_to_log("action chosen: " + str(action))
 
 
             # step the environment and get new measurements
@@ -241,6 +242,8 @@ def main():
                 if(is_dead):
                     print('just died!')
                     print("processed_rewards: " + str(processed_rewards))
+                    logger.write_to_log('just died!')
+                    logger.write_to_log("processed_rewards: " + str(processed_rewards))
                 if (episode_number % WRITE_TO_LOG == 0):
                     logger.write_to_log("raw_score: " +str(raw_scores))
                     logger.write_to_log("processed_rewards:     " + str(processed_rewards))
@@ -310,6 +313,7 @@ def main():
                         pkl.dump(sess.run(tvars), f, protocol=2)
                     print('Saved best weights successfully!')
                     print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
+                    logger.write_to_log('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
                 # manual save
                 with open(WEIGHTS_FILE, 'wb') as f:
                     pkl.dump(sess.run(tvars), f, protocol=2)
@@ -322,6 +326,7 @@ def main():
                 wait_for_game_to_start()
 
             if (episode_number % WRITE_TO_LOG == 0):
+                logger.write_to_log('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
                 logger.write_spacer()
 
 #    plot_graph(average_scores_along_the_game,"test","test.png")
