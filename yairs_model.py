@@ -11,8 +11,8 @@ matplotlib.use('Qt4Agg')
 
 #CNN constants
 OUTPUT_DIM = 64
-INPUT_DIM = 900
-SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
+INPUT_DIM = 1024
+SQRT_INPUT_DIM  = 32 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
@@ -37,6 +37,7 @@ LOAD_WEIGHTS = False
 BEGINING_SCORE = 10
 
 #initialize logger:
+WRITE_TO_LOG = 50
 logger = Logger('Test')
 
 
@@ -191,9 +192,10 @@ def main():
             print("default_data_counter: " + str(default_data_counter))
             print("step_counter: "+str(step_counter))
             '''
-            #logger.write_to_log("observation got: " + str(obsrv))
-            #logger.write_to_log("action_probs: " + str(action_probs))
-            #logger.write_to_log("action chosen: " + str(action))
+            if(step_counter % WRITE_TO_LOG ==0):
+                #logger.write_to_log("observation got: " + str(obsrv))
+                logger.write_to_log("action_probs: " + str(action_probs))
+                logger.write_to_log("action chosen: " + str(action))
 
 
             # step the environment and get new measurements
@@ -288,6 +290,8 @@ def main():
                         pkl.dump(sess.run(tvars), f, protocol=2)
                     print('Saved best weights successfully!')
                     print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
+                    logger.write_to_log('Saved best weights successfully!')
+                    logger.write_to_log('Current best result for ' + str(episode_number) + ' episodes: ' + str(best_average_score))
                 # manual save
                 with open(WEIGHTS_FILE, 'wb') as f:
                     pkl.dump(sess.run(tvars), f, protocol=2)

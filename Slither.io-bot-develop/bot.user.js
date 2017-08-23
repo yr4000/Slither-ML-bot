@@ -400,7 +400,7 @@ var bot = window.bot = (function() {
         ML_mode: true,
         //TODO: play with the offset, consider create width and length offsets
         offsetSize: 30,    //the size of each pixel in label_map is offsetSize^2
-        mapSize: 30,        //The label_map size is mapSize^2
+        mapSize: 32,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
