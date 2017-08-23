@@ -10,9 +10,9 @@ import tensorflow as tf
 #matplotlib.use('Qt4Agg')
 
 #CNN constants
-OUTPUT_DIM = 64
-INPUT_DIM = 400
-SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
+OUTPUT_DIM = 32
+INPUT_DIM = 1024
+SQRT_INPUT_DIM  = 32 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
@@ -31,7 +31,7 @@ LEARNING_RATE = 1e-4
 MAX_EPISODES = 10000
 STEPS_UNTIL_BACKPROP = 1000
 BATCH_SIZE = 100
-WRITE_TO_LOG = 25
+WRITE_TO_LOG = 100
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
@@ -117,7 +117,7 @@ Gradients = tf.gradients(-loss,tvars)
 
 #from here starts update weights
 Gradients_holder = [tf.placeholder(tf.float32) for i in range(VAR_NO)]
-# then train the network - for each of the parameters do the GD as described in the HW.
+    # then train the network - for each of the parameters do the GD as described in the HW.
 #learning_rate = tf.placeholder(tf.float32, shape=[])   #TODO: maybe use later for oprimization of the model
 train_step = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(Gradients_holder,tvars))
 

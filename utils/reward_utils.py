@@ -55,7 +55,7 @@ def calc_reward_from_raw(score_arr , is_dead):
     #                                    , cumulative_discounted_rewards)
     #normalize
     normalized_rewards = np.divide(cumulative_discounted_rewards, np.std(cumulative_discounted_rewards))
-    normalized_rewards -= np.mean(cumulative_discounted_rewards)
+    normalized_rewards = np.add (normalized_rewards , -1)
 
     return normalized_rewards
 
