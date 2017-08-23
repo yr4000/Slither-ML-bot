@@ -11,6 +11,7 @@ from datetime import datetime
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = 32
+INNER_INPUT_SIZE = 1024
 
 #TODO: is it fine that this function is here?
 #TODO: fix according to Carmels version
@@ -53,7 +54,7 @@ def get_observation():
 #TODO: temporary solution, need to fix
 def get_default_data():
     return {
-        'observation': [0 for i in range(400)],
+        'observation': [0 for i in range(INNER_INPUT_SIZE)],
         'score': 0,
         'is_dead': False,
         'message_id': -1

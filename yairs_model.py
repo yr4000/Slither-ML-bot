@@ -154,6 +154,10 @@ def main():
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
 
+            #if default takes the score from last step
+            if(score ==0):
+                score = raw_scores[-1]
+
             raw_scores.append(score)
 
             # TODO: for debug
