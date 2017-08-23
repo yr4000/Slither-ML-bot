@@ -115,6 +115,14 @@ def get_reward(score_arr,is_dead):
 
     return rewards
 
+def raw_score_reward(raw_score, is_dead):
+    death_punishment = -100
+    if (is_dead):
+        raw_score[len(raw_score) - 1] = death_punishment
+
+    return raw_score[1:]
+
+
 def wait_for_game_to_start():
     obsrv, score, is_dead, request_id, default  = get_observation()
     while(is_dead):
