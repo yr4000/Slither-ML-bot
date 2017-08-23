@@ -399,8 +399,8 @@ var bot = window.bot = (function() {
         SEND_C: 0,          //send counter
         ML_mode: true,
         //TODO: play with the offset, consider create width and length offsets
-        offsetSize: 40,    //the size of each pixel in label_map is offsetSize^2
-        mapSize: 20,        //The label_map size is mapSize^2
+        offsetSize: 30,    //the size of each pixel in label_map is offsetSize^2
+        mapSize: 30,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
@@ -969,6 +969,7 @@ var bot = window.bot = (function() {
                         bot.setDirection(data.action);
                         window.setAcceleration(data.do_accelerate);
                         console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
+                        console.log('Action chosen: ' + data.action);
 
                     },
                // vvv---- This is the new bit
@@ -1196,10 +1197,10 @@ var bot = window.bot = (function() {
         move: function(side){
             var angle = Math.atan2(bot.direction.y, bot.direction.x);
             if(side == 1){
-                angle += bot.MOVEMENT_OFFSET;
+                angle += bot.MOVEMENT_OFFSET/10;
             }
             else if(side ==2){
-                angle -= bot.MOVEMENT_OFFSET;
+                angle -= bot.MOVEMENT_OFFSET/10;
             }
             bot.direction = {x: bot.MOVEMENT_R*Math.cos(angle),
                                  y: bot.MOVEMENT_R*Math.sin(angle)};
@@ -1212,6 +1213,15 @@ var bot = window.bot = (function() {
         setDirection: function (sliceIndex) {
             bot.direction = {x: -bot.MOVEMENT_R*Math.cos(sliceIndex*bot.MOVEMENT_OFFSET + Math.PI/2),
                                  y: bot.MOVEMENT_R*Math.sin(sliceIndex*bot.MOVEMENT_OFFSET - Math.PI/2)};
+
+            //adding vibration that make sure the bot will move in the right direction
+            var r = Math.random();
+            if(r < 0.33){
+                bot.move(1);
+            }
+            else if(r < 0.66){
+                bot.move(2);
+            }
             canvasUtil.setMouseCoordinates(bot.direction);
         },
 
