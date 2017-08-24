@@ -31,7 +31,7 @@ BATCH_SIZE = 10
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD_WEIGHTS = False
+LOAD_WEIGHTS = True
 
 #other constants:
 BEGINING_SCORE = 10
