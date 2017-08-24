@@ -18,14 +18,17 @@ CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
 NUM_OF_CHANNELS_LAYER2 = 16     #TODO: Is that really what suppose to be here?
 NUM_OF_CHANNELS_LAYER3 = 32
-SIZE_OF_FULLY_CONNECTED_LAYER = 256
-VAR_NO = 8      #number of Ws and bs (the variables)
-KEEP_RATE = 0.8
-keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
+SIZE_OF_FULLY_CONNECTED_LAYER_1 = 256
+SIZE_OF_FULLY_CONNECTED_LAYER_2 = 128
+SIZE_OF_FULLY_CONNECTED_LAYER_3 = 64
+
+VAR_NO = 12      #number of Ws and bs (the variables)
+KEEP_RATE = 0.9
+EPSILON_FOR_EXPLORATION = 0.05
 
 #Model constants
-MAX_GAMES = 500
-STEPS_UNTIL_BACKPROP = 500
+MAX_GAMES = 1000
+STEPS_UNTIL_BACKPROP = 1000
 BATCH_SIZE = 10
 
 #Load and save constants
@@ -56,8 +59,51 @@ def InitializeVarXavier(var_name,var_shape):
 
 initialize = InitializeVarXavier
 
+def create_weights_and_biases(w_name,w_shape,b_name, b_shape):
+    w = initialize(w_name,w_shape)
+    b = initialize(b_name,b_shape)
+    return w,b
+
+
+def create_conv_layer(input, w_name,w_shape,b_name, b_shape, with_polling = True):
+    w,b = create_weights_and_biases(w_name,w_shape,b_name, b_shape)
+    res = tf.nn.relu(conv2d(input, w) + b)
+    if(with_polling):
+        res = maxpool2d(res)
+
+    return res
+
+def create_fully_connected_layer(input, f, w_name, w_shape, b_name, b_shape, with_dropout = True):
+    w,b = create_weights_and_biases(w_name, w_shape, b_name, b_shape)
+    res = f(tf.matmul(input, w) + b)
+    if(with_dropout):
+        res = tf.nn.dropout(res, KEEP_RATE)
+
+    return res
+
 
 observations = tf.placeholder(tf.float32, [None,INPUT_DIM])
+
+#CNN:
+x = tf.reshape(observations, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
+#first layer: conv + pool
+conv1 = create_conv_layer(x,'wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2],
+                          'bc1', [NUM_OF_CHANNELS_LAYER2], with_polling=True)
+#second layer: conv + pool
+conv2 = create_conv_layer(conv1,'wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3],
+                          'bc2',[NUM_OF_CHANNELS_LAYER3], with_polling=True)
+
+r_layer2 = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
+
+fc1 = create_fully_connected_layer(r_layer2, tf.nn.relu, 'wfc1',[CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER_1],
+                                   'bfc1',[SIZE_OF_FULLY_CONNECTED_LAYER_1], with_dropout=True)
+fc2 = create_fully_connected_layer(fc1, tf.nn.tanh, 'wfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_1, SIZE_OF_FULLY_CONNECTED_LAYER_2],
+                                   'bfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_2], with_dropout=True)
+fc3 = create_fully_connected_layer(fc2, tf.nn.tanh, 'wfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_2, SIZE_OF_FULLY_CONNECTED_LAYER_3],
+                                   'bfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_3], with_dropout=True)
+
+
+'''
 #trainable variables
 weights = {'W_conv1': initialize('wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2]),
            'W_conv2':  initialize('wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3]),
@@ -71,7 +117,7 @@ biases = {'b_conv1': initialize('bc1', [NUM_OF_CHANNELS_LAYER2]),
           'out': initialize('bo', [OUTPUT_DIM])}
 
 #CNN:
-x = tf.reshape(observations, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
+
 #first layer: conv + pool
 conv1 = tf.nn.relu(conv2d(x, weights['W_conv1']) + biases['b_conv1'])
 pool1 = maxpool2d(conv1)
@@ -82,8 +128,10 @@ pool2 = maxpool2d(conv2)
 r_layer2 = tf.reshape(pool2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
 fc = tf.nn.relu(tf.matmul(r_layer2, weights['W_fc']) + biases['b_fc'])
 dropped_fc = tf.nn.dropout(fc, KEEP_RATE)
+'''
 
-score = tf.matmul(dropped_fc, weights['out']) + biases['out']
+w_out, b_out = create_weights_and_biases('wout',[SIZE_OF_FULLY_CONNECTED_LAYER_3, OUTPUT_DIM], 'bout', [OUTPUT_DIM] )
+score = tf.matmul(fc3, w_out) + b_out
 actions_probs = tf.nn.softmax(score)
 
 #HERE STARTS THE GRADIENT COMPUTATION
@@ -115,7 +163,7 @@ def main():
     #variables used for models logics
     raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
     episode_number = 0
-    update_weights = False  # if to much time passed, update the weights even if the game is not finished
+    update_weights = False  # if too much time passed, update the weights even if the game is not finished
     grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
 
     #variables for debugging:
@@ -174,13 +222,20 @@ def main():
             states.append(obsrv)        #TODO: use np.concatinate?
             # Run the policy network and get a distribution over actions
             action_probs = sess.run(actions_probs, feed_dict={observations: [obsrv]})
-            # np.random.multinomial cause problems
-            try:
-                chosen_actions = np.random.multinomial(1, action_probs[0])
-            except:
-                chosen_actions = pick_random_action_manually(action_probs[0])
-                manual_prob_use += 1
-                prob_deviation_sum += np.abs(np.sum(action_probs) - 1)
+
+            # if - exploration, else - explotation
+            if(np.random.binomial(1,EPSILON_FOR_EXPLORATION , 1)[0]):
+                chosen_actions = pick_action_uniformly(action_probs[0])
+                logger.write_to_log('Tried exploration!')
+            else:
+                # np.random.multinomial cause problems
+                try:
+                    chosen_actions = np.random.multinomial(1, action_probs[0])
+                except:
+                    chosen_actions = pick_random_action_manually(action_probs[0])
+                    manual_prob_use += 1
+                    prob_deviation_sum += np.abs(np.sum(action_probs) - 1)
+
 
             # Saves the selected action for a later use
             actions_booleans.append(chosen_actions)
@@ -277,6 +332,8 @@ def main():
 
                 # Do the training step
                 if (episode_number % BATCH_SIZE == 0):
+                    #if (episode_number % WRITE_TO_LOG == 0):
+                    logger.write_to_log("learned variables: "+str(vars[0]))
                     print("taking the update step")
                     grad_dict = {Gradients_holder[i]: grads_sums[i] for i in range(VAR_NO)}
                     #TODO choose learning rate?

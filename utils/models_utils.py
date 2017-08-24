@@ -34,6 +34,16 @@ def pick_random_action_manually(actions):
         res = [0 if i != index else 1 for i in range(l)]
     return res
 
+def pick_action_uniformly(actions):
+    r = 1
+    while(r==1):
+        r = np.random.uniform()
+    l = len(actions)
+    index = math.floor(r*l)
+    res = [0 if i != index else 1 for i in range(l)]
+    return res
+
+
 #we assume here we get the array in the right order, so each sum is indeed being multiply with the right factor
 def decrese_rewards(rewards):
     gama = 0.99
@@ -47,7 +57,7 @@ def get_observation():
             data = json.load(json_data)
         default = 0
     except:
-        print("got default data")#todo: delte
+        #print("got default data")      #todo: delte
         data = get_default_data()
         default = 1
     return data["observation"], data["score"], data["is_dead"],data['message_id'], default
