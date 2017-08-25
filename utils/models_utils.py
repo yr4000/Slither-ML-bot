@@ -11,7 +11,7 @@ from datetime import datetime
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = 32
-INNER_INPUT_SIZE = 400
+INNER_INPUT_SIZE = 576
 
 #TODO: is it fine that this function is here?
 #TODO: fix according to Carmels version
@@ -92,45 +92,30 @@ def choose_action(index,request_id):
 
 #a simple reward function to begin with
 def get_reward(score_arr,is_dead):
-    no_gain_punishement = -5
-    death_punishment = -100
-    small_gain_prize = 2
-    medium_gain_prize = 6
-    high_gain_prize = 10
-    rewards = []
+    no_gain_punishment = 1
+    death_punishment = -750
 
-    if (len(score_arr) == 1):
+    if(len(score_arr) == 1):
         return np.array([0]) # worst case TODO : i think should never happen im model
 
-    scores_diff = np.diff(score_arr)    #convert raw score to points earned/lost per step
-    for k in scores_diff:
-        if(k<=0):
-            rewards.append(no_gain_punishement)
-        elif(k>0 and k<=5):
-            rewards.append(small_gain_prize)
-        elif(k>5 and k<=15):
-            rewards.append(medium_gain_prize)
-        else:
-            rewards.append(high_gain_prize)
+    rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
 
-    '''
     #boost positive rewards and decay negative once
     for i in range(len(rewards)):
         if(rewards[i] <= 0):
-            rewards[i] -= boost_const
-        else:
-            rewards[i] += boost_const
-    '''
+            rewards[i] -= no_gain_punishment
 
     if (is_dead):
-        rewards[len(rewards) - 1] = death_punishment
+        rewards[-1] = death_punishment
 
     return rewards
 
 def raw_score_reward(raw_score, is_dead):
-    death_punishment = -100
+    death_punishment = -500
+
+    #punish if reward didn't change
     if (is_dead):
-        raw_score[len(raw_score) - 1] = death_punishment
+        raw_score[-1] = death_punishment
 
     return raw_score[1:]
 
@@ -141,43 +126,32 @@ def wait_for_game_to_start():
         time.sleep(0.5)
         obsrv, score, is_dead, request_id, default = get_observation()
 
+#if from some reason the the connection got lost, stops the game
+#TODO: what if the bot just went on in an empty area? technically it should change from time to time because the bot itself
+def wait_if_connection_lost(observations):
+    look_back = 5
+    do_write = True
+    if(not len(observations) < look_back):
+        last_seen = observations[-1]
+        for i in range(look_back):
+            if(last_seen != observations[-i-1]):
+                do_write = False
 
+        if(do_write):
+            data = {
+                'message_id': -1,
+                'observation': last_seen,
+                'is_dead': True,
+                'score': 10,
+                'r': 100,
+                'x': -1,
+                'y': -1,
+                'hours': -1,
+                'minutes': -1,
+                'seconds': -1,
 
-#TODO: this is a good example how to implement switch-case in python. delete in the end
-'''
-#TODO: temporary
-#according to the action, send to the server what to do
-def choose_action(index):
-    return{
-        # do nothing
-        0:{
-            'action': DO_NOTHING,
-            'do_accelerate': False
-        },
-        #accelerate
-        1:{
-            'action': DO_NOTHING,
-            'do_accelerate': True
-        },
-        #move right
-        2:{
-            'action': MOVE_RIGHT,
-            'do_accelerate': False
-        },
-        #move right and accelerate
-        3:{
-            'action': MOVE_RIGHT,
-            'do_accelerate': True
-        },
-        #move left
-        4:{
-            'action': MOVE_LEFT,
-            'do_accelerate': False
-        },
-        #move left and accelerate
-        5:{
-            'action': MOVE_LEFT,
-            'do_accelerate': True
-        }
-    }[index]
-'''
+            }
+            with open('observation.json', 'w') as outfile:
+                json.dump(data, outfile)
+
+            wait_for_game_to_start()

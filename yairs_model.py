@@ -5,14 +5,11 @@ from utils.plot_utils import plot_graph
 import pickle as pkl
 import os
 
-#TODO: I am not sure if there is a problem here with the Qt thing or not
-import matplotlib
-matplotlib.use('Qt4Agg')
 
 #CNN constants
 OUTPUT_DIM = 64
-INPUT_DIM = 400
-SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
+INPUT_DIM = 576
+SQRT_INPUT_DIM  = 24 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
@@ -24,12 +21,12 @@ SIZE_OF_FULLY_CONNECTED_LAYER_3 = 64
 
 VAR_NO = 12      #number of Ws and bs (the variables)
 KEEP_RATE = 0.9
-EPSILON_FOR_EXPLORATION = 0.05
+EPSILON_FOR_EXPLORATION = 0.01
 
 #Model constants
-MAX_GAMES = 500
-STEPS_UNTIL_BACKPROP = 1000
-BATCH_SIZE = 10
+MAX_GAMES = 1000
+STEPS_UNTIL_BACKPROP = 100
+BATCH_SIZE = 5
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
@@ -173,11 +170,13 @@ def main():
 
 
         while episode_number < MAX_GAMES:
+            wait_if_connection_lost(states)
+
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
 
             #if default takes the score from last step
-            if(score ==0):
+            if(score == 0):
                 score = raw_scores[-1]
 
             raw_scores.append(score)
@@ -257,7 +256,7 @@ def main():
                     print('just died!')
                     print("processed_rewards: " + str(processed_rewards))
                 #logger.write_to_log("raw_score: " +str(raw_scores))
-                #logger.write_to_log("processed_rewards: " + str(processed_rewards))
+                logger.write_to_log("processed_rewards: " + str(processed_rewards))
 
                 #'''
                 # create the rewards sums of the reversed rewards array
