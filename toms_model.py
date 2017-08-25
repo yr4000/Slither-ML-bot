@@ -24,7 +24,7 @@ SIZE_OF_FULLY_CONNECTED_LAYER_3 = 64
 VAR_NO = 12      #number of Ws and bs (the variables)
 KEEP_RATE = 0.9
 keep_prob = tf.placeholder(tf.float32)      #TODO: do we use that?
-EPSILON_FOR_EXPLORATION = 0.95
+EPSILON_FOR_EXPLORATION = 0.1
 LEARNING_RATE = 1e-4
 
 #Model constants
@@ -33,15 +33,16 @@ STEPS_UNTIL_BACKPROP = 1000
 BATCH_SIZE = 100
 WRITE_TO_LOG = 100
 #Load and save constants
-WEIGHTS_FILE = 'weights.pkl'
-BEST_WEIGHTS = 'best_weights.pkl'
+WEIGHTS_FILE = 'weights_tom.pkl'
+BEST_WEIGHTS = 'best_weights_tom.pkl'
 LOAD_WEIGHTS = False
 
 #other constants:
 BEGINING_SCORE = 10
 
 #initialize logger:
-logger = Logger('Test')
+logger_parameters = Logger('Tom_parmameters')
+logger_scores = Logger('Tom_scores')
 
 
 
@@ -174,9 +175,6 @@ def main():
             #is_dead = False
             default_data_counter += default_obsrv
 
-            #TODO: simple reward function
-            #reward = get_reward(raw_scores, is_dead)
-
             #TODO: for debug
             vars = sess.run(tvars)
 
@@ -186,7 +184,7 @@ def main():
             action_probs = sess.run(actions_probs, feed_dict={observations: [obsrv]})
 
             if(np.random.binomial(1,EPSILON_FOR_EXPLORATION , 1)[0]): # exploration
-                chosen_actions = pick_random_action_manually(action_probs[0])
+                chosen_actions = np.random.randint(OUTPUT_DIM)
                 #TODO : print to logger
             else:#explotation
                 # np.random.multinomial cause problems
@@ -214,8 +212,8 @@ def main():
 
             if(episode_number %WRITE_TO_LOG == 0):
                 #logger.write_to_log("observation got: " + str(obsrv))
-                logger.write_to_log("action_probs: " + str(action_probs))
-                #logger.write_to_log("action chosen: " + str(action))
+                logger_parameters.write_to_log("action_probs: " + str(action_probs))
+                logger_parameters.write_to_log("action chosen: " + str(action))
 
 
             # step the environment and get new measurements
@@ -242,11 +240,10 @@ def main():
                 if(is_dead):
                     print('just died!')
                     print("processed_rewards: " + str(processed_rewards))
-                    logger.write_to_log('just died!')
-                    logger.write_to_log("processed_rewards: " + str(processed_rewards))
+                    logger_parameters.write_to_log("processed_rewards: " + str(processed_rewards))
                 if (episode_number % WRITE_TO_LOG == 0):
-                    logger.write_to_log("raw_score: " +str(raw_scores))
-                    logger.write_to_log("processed_rewards:     " + str(processed_rewards))
+                    logger_parameters.write_to_log("raw_score: " +str(raw_scores))
+                    logger_parameters.write_to_log("processed_rewards:     " + str(processed_rewards))
 
                 '''
                 # create the rewards sums of the reversed rewards array
@@ -273,7 +270,7 @@ def main():
                 loss_res = sess.run(loss, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
                 if (episode_number % WRITE_TO_LOG == 0):
-                    logger.write_to_log("filtered_actions: "+ str(fa_res))
+                    logger_parameters.write_to_log("filtered_actions: "+ str(fa_res))
 
 
                 # gradients for current episode
@@ -289,7 +286,7 @@ def main():
                 average_scores_along_the_game.append(current_average_score)
                 print("average score after %d steps: %f" %(step_counter, current_average_score))
                 if (episode_number % WRITE_TO_LOG == 0):
-                    logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
+                    logger_scores.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
 
                 #nullify step_counter:
                 step_counter = 0
@@ -313,7 +310,7 @@ def main():
                         pkl.dump(sess.run(tvars), f, protocol=2)
                     print('Saved best weights successfully!')
                     print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
-                    logger.write_to_log('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
+                    logger_scores.write_to_log('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
                 # manual save
                 with open(WEIGHTS_FILE, 'wb') as f:
                     pkl.dump(sess.run(tvars), f, protocol=2)
@@ -326,8 +323,11 @@ def main():
                 wait_for_game_to_start()
 
             if (episode_number % WRITE_TO_LOG == 0):
-                logger.write_to_log('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
-                logger.write_spacer()
+                logger_scores.write_to_log('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
+                logger_scores.write_spacer()
+                logger_parameters.write_spacer()
+
+
 
 #    plot_graph(average_scores_along_the_game,"test","test.png")
 
