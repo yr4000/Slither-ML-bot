@@ -399,8 +399,8 @@ var bot = window.bot = (function() {
         SEND_C: 0,          //send counter
         ML_mode: true,
         //TODO: play with the offset, consider create width and length offsets
-        offsetSize: 30,    //the size of each pixel in label_map is offsetSize^2
-        mapSize: 32,        //The label_map size is mapSize^2
+        offsetSize: 40,    //the size of each pixel in label_map is offsetSize^2
+        mapSize: 20,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
@@ -968,8 +968,8 @@ var bot = window.bot = (function() {
                         //console.log(data);
                         bot.setDirection(data.action);
                         window.setAcceleration(data.do_accelerate);
-                        console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
-                        console.log('Action chosen: ' + data.action);
+                        //console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
+                        //console.log('Action chosen: ' + data.action);
 
                     },
                // vvv---- This is the new bit

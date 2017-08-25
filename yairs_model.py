@@ -11,8 +11,8 @@ matplotlib.use('Qt4Agg')
 
 #CNN constants
 OUTPUT_DIM = 64
-INPUT_DIM = 1024
-SQRT_INPUT_DIM  = 32 #IN ORDER TO RESHAPE INTO TENSOR
+INPUT_DIM = 400
+SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = 1
@@ -27,14 +27,14 @@ KEEP_RATE = 0.9
 EPSILON_FOR_EXPLORATION = 0.05
 
 #Model constants
-MAX_GAMES = 1000
+MAX_GAMES = 500
 STEPS_UNTIL_BACKPROP = 1000
 BATCH_SIZE = 10
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD_WEIGHTS = True
+LOAD_WEIGHTS = False
 
 #other constants:
 BEGINING_SCORE = 10
@@ -92,44 +92,18 @@ conv1 = create_conv_layer(x,'wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_
 #second layer: conv + pool
 conv2 = create_conv_layer(conv1,'wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3],
                           'bc2',[NUM_OF_CHANNELS_LAYER3], with_polling=True)
-
+#flatten layer
 r_layer2 = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
-
+#fully connected 1
 fc1 = create_fully_connected_layer(r_layer2, tf.nn.relu, 'wfc1',[CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER_1],
                                    'bfc1',[SIZE_OF_FULLY_CONNECTED_LAYER_1], with_dropout=True)
+#fully connected 2
 fc2 = create_fully_connected_layer(fc1, tf.nn.tanh, 'wfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_1, SIZE_OF_FULLY_CONNECTED_LAYER_2],
                                    'bfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_2], with_dropout=True)
+#fully connected 3
 fc3 = create_fully_connected_layer(fc2, tf.nn.tanh, 'wfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_2, SIZE_OF_FULLY_CONNECTED_LAYER_3],
                                    'bfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_3], with_dropout=True)
-
-
-'''
-#trainable variables
-weights = {'W_conv1': initialize('wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2]),
-           'W_conv2':  initialize('wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3]),
-           'W_fc': initialize('wfc',[CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER]),
-           'out': initialize('wo',[SIZE_OF_FULLY_CONNECTED_LAYER, OUTPUT_DIM])}
-
-
-biases = {'b_conv1': initialize('bc1', [NUM_OF_CHANNELS_LAYER2]),
-          'b_conv2': initialize('bc2', [NUM_OF_CHANNELS_LAYER3]),
-          'b_fc': initialize('bfc', [SIZE_OF_FULLY_CONNECTED_LAYER]),
-          'out': initialize('bo', [OUTPUT_DIM])}
-
-#CNN:
-
-#first layer: conv + pool
-conv1 = tf.nn.relu(conv2d(x, weights['W_conv1']) + biases['b_conv1'])
-pool1 = maxpool2d(conv1)
-#second layer: conv + pool
-conv2 = tf.nn.relu(conv2d(pool1, weights['W_conv2']) + biases['b_conv2'])
-pool2 = maxpool2d(conv2)
-#last layer - fully connected layer?
-r_layer2 = tf.reshape(pool2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
-fc = tf.nn.relu(tf.matmul(r_layer2, weights['W_fc']) + biases['b_fc'])
-dropped_fc = tf.nn.dropout(fc, KEEP_RATE)
-'''
-
+#output layer
 w_out, b_out = create_weights_and_biases('wout',[SIZE_OF_FULLY_CONNECTED_LAYER_3, OUTPUT_DIM], 'bout', [OUTPUT_DIM] )
 score = tf.matmul(fc3, w_out) + b_out
 actions_probs = tf.nn.softmax(score)
