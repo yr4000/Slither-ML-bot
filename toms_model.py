@@ -1,13 +1,12 @@
 from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
 from utils.log_utils import *
-#from utils.plot_utils import plot_graph
+from utils.plot_utils import plot_graph
+import numpy as np
 import pickle as pkl
 import os
 import tensorflow as tf
 #TODO: I am not sure if there is a problem here with the Qt thing or not
-#import matplotlib
-#matplotlib.use('Qt4Agg')
 
 #CNN constants
 OUTPUT_DIM = 32
@@ -29,9 +28,9 @@ EPSILON_FOR_EXPLORATION = 0.05
 LEARNING_RATE = 1e-4
 
 #Model constants
-EPISODE_SIZE = 15
-MAX_EPISODES = 1000000
+EPISODE_SIZE = 20
 BATCH_SIZE = 50
+MAX_EPISODES = EPISODE_SIZE*BATCH_SIZE*10000
 
 #STEPS_UNTIL_BACKPROP = 1000
 WRITE_TO_LOG = 100
@@ -134,18 +133,21 @@ def main():
     raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
     episode_number = 0
     grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
+    step_counter = 0
 
     #variables for debugging:
-    manual_prob_use = 0         #TODO: consider use the diffrences from 1
+    manual_prob_counter = 0         #TODO: consider use the diffrences from 1
     prob_deviation_sum = 0
     default_data_counter = 0  # counts number of exceptions in reading the observations' file (and getting a default data)
-    step_counter = 0        #TODO: for tests
+
 
     #variables for evaluation:
-    best_average_score = 0
+    best_avg_batch_score = 0
     best_score_in_a_single_game = 0
-    avg_scores_per_batch = []
     game_counter = 0
+    episode_scores = []
+    avg_scores_per_batch = []
+    final_scores = []
 
     with tf.Session() as sess:
         sess.run(init)
@@ -168,22 +170,23 @@ def main():
 
 
         while episode_number < MAX_EPISODES:
-            #get data and process score to reward
-            obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
-
-            raw_scores.append(score)
-            # append the relevant observation to the following action, to states
-            states.append(obsrv)  # TODO: use np.concatinate?
+            # get observation
+            obsrv, score, is_dead, request_id, default_obsrv = get_observation()
 
             # TODO: for debug
-            #is_dead = False
             default_data_counter += default_obsrv
 
-            #TODO: for debug
-            #vars = sess.run(tvars)
+            #get the initial score per episode
+            if step_counter == 0:
+                initial_episode_score = score
+
+            raw_scores.append(score)
+            states.append(obsrv)
 
             # Run the policy network and get a distribution over actions - Exploitation
             action_probs = sess.run(actions_probs, feed_dict={observations: [obsrv]})
+
+            #CHOOSE ACTION FROM THE GIVEN DISTRIBUTION
 
             # exploration
             if(np.random.binomial(1,EPSILON_FOR_EXPLORATION , 1)[0]):
@@ -192,7 +195,7 @@ def main():
                 chosen_actions = np.random.multinomial(1, action_probs[0])
             except:
                 chosen_actions = pick_random_action_manually(action_probs[0])
-                manual_prob_use += 1
+                manual_prob_counter += 1
                 prob_deviation_sum += np.abs(np.sum(action_probs) - 1)
 
             # Saves the selected action for a later use
@@ -206,29 +209,33 @@ def main():
 
             # Just for logging
             if (episode_number % WRITE_TO_LOG == 0):
-                #logger.write_to_log("observation got: " + str(obsrv))
-                logger_parameters.write_to_log("action_probs: " + str(action_probs))
-                logger_parameters.write_to_log("action chosen: " + str(action))
-
-
+                logger_parameters.write_to_log("in episode number {} :".format(episode_number))
+                logger_parameters.write_to_log("observation : {}".format(str(obsrv)))
+                logger_parameters.write_to_log("action_probs : {}".format(str(action_probs)))
             #TODO: sleep here?
             time.sleep(0.05)
 
             if (is_dead or (step_counter % EPISODE_SIZE == 0)) and (len(raw_scores) >= 2):#todo: maybe >=
-                #UPDATE MODEL:
 
-                #calculate rewards from raw scores:
-                processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
+                #calculate the score for the current episode
+                episode_scores.append(raw_scores[-1] - initial_episode_score)
 
-                # TODO: for debug:
                 if is_dead:
                     game_counter += 1
                     final_scores.append(raw_scores[-1])
-                    print('just died! with score : {}'.format(raw_scores[-1]))
-                    logger_scores.write_to_log("score for game number {} is: {}".format(game_counter, raw_scores[-1]))
+                    print('just died! with score : {}'.format(final_scores[-1]))
+                    logger_scores.write_to_log("score for game number {} is: {}"
+                                               .format(game_counter, raw_scores[-1]))
                     if best_score_in_a_single_game < final_scores[-1]:
-                        logger_scores.write_to_log(
-                            "new best score score ,in game number {}, is: {}".format(game_counter, raw_scores[-1]))
+                        logger_scores.write_to_log("new best score score ,in game number {}, is: {}"
+                                                        .format(game_counter, final_scores[-1]))
+
+
+                #calculate rewards from raw scores:
+                processed_rewards = calc_reward_from_raw(raw_scores,is_dead)
+                modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
+                # modify actions_booleans to be an array of booleans
+                actions_booleans = (np.array(actions_booleans)) == 1
 
                 '''
                 # create the rewards sums of the reversed rewards array
@@ -240,9 +247,6 @@ def main():
                 logger.write_to_log("rewards_sums: " + str(rewards_sums))
                 '''
 
-                modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
-                # modify actions_booleans to be an array of booleans
-                actions_booleans = (np.array(actions_booleans)) == 1
 
                 #TODO: showind process results for debugging:
                 fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,
@@ -268,14 +272,13 @@ def main():
                     # take the train step
                     sess.run(train_step, feed_dict=grad_dict)
                     #write to logger
-                    avg_scores_per_batch.append(np.avg(np.array(final_scores )))
+                    avg_scores_per_batch.append(np.average(episode_scores))
                     logger_scores.write_to_log("avarage score for batch {} is: {} ".format(episode_number / BATCH_SIZE ,
                                                                               avg_scores_per_batch[-1]))
-                    logger_scores.write_spacer()
 
                     # evaluate and save:
-                    if (best_average_score < avg_scores_per_batch[-1]):
-                        best_average_score = current_average_score
+                    if (best_avg_batch_score < avg_scores_per_batch[-1]):
+                        best_avg_batch_score = avg_scores_per_batch[-1]
                         # save with shmickle
                         with open(BEST_WEIGHTS, 'wb') as f:
                             pkl.dump(sess.run(tvars), f, protocol=2)
@@ -283,25 +286,31 @@ def main():
                         logger_scores.write_to_log(
                             "Current best avg score , in batch number {}, is {}  , ".format(episode_number / BATCH_SIZE ,
                                                                               avg_scores_per_batch[-1]))
-
                     # manual save
                     with open(WEIGHTS_FILE, 'wb') as f:
                         pkl.dump(sess.run(tvars), f, protocol=2)
-                        # print('auto-saved weights successfully.')
 
-                    #nullify grads_sum and final_scores
+                    #prepare for next batch
+                    logger_scores.write_spacer()
+                    episode_scores = []
                     grads_sums = get_empty_grads_sums()
-                    final_scores = []
-                    #TODO: graph
 
 
-                # nullify relevant vars and updates episode number.
+                # prepare for next episode.
                 raw_scores, states, actions_booleans = [BEGINING_SCORE], [], []
-                #manual_prob_use = 0
-
                 wait_for_game_to_start()
 
-#    plot_graph(average_scores_along_the_game,"test","test.png")
+    ########################################end of TF session#####################################3
+
+    #final logger update
+    logger_scores.write_to_log("proportion of default data".format(default_data_counter/MAX_EPISODES))
+    logger_scores.write_to_log("proportion of manual_prob".format(manual_prob_counter/MAX_EPISODES))
+    logger_scores.write_to_log("avg size of prob_deviation from 1".format(prob_deviation_sum/manual_prob_counter))
+
+    #plot graphs
+    plot_graph(final_scores,"test - tom","test - tom - scores.png")
+    plot_graph(avg_scores_per_batch,"test - tom","test - tom - score by batches.png")
+
 
 
 

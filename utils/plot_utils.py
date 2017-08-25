@@ -4,7 +4,7 @@ representations of our experiments results.
 '''
 
 import matplotlib
-matplotlib.use('Qt4Agg')    #TODO: not sure it is necessary...
+#matplotlib.use('Qt4Agg')    #TODO: not sure it is necessary...
 #matplotlib.use('Agg') #in order not to display the plot
 import matplotlib.pyplot as plt
 
