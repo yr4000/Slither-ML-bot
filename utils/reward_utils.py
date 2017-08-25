@@ -23,11 +23,11 @@ def boost(reward_indicator, accel_penalty_indicator, processed_rewards):
     boosting_indicator = np.add(np.multiply(boosting_indicator, BOOSTING_FACTOR - 1), 1)
     return np.multiply(boosting_indicator , processed_rewards)
 '''
+
 #calculates rewards per step from the score per step array
 #TODO: need to take care when the array is at size 2
 def calc_reward_from_raw(score_arr , is_dead):
-    if (len(score_arr) == 1):
-        return np.array([0]) # worst case TODO : i think should never happen im model
+
     rewards = []
     scores_diff = np.diff(score_arr)    #convert raw score to points earned/lost per step
     for k in scores_diff:
@@ -41,8 +41,8 @@ def calc_reward_from_raw(score_arr , is_dead):
             rewards.append(LARGE_GAIN_REWARD)
 
 
-    if (is_dead):
-        rewards[len(rewards)-1] = PUNISHMENT_FOR_DEATH      #TODO: I am not sure this is true, we shouldn't update only in death
+    if is_dead:
+        rewards[-1] = PUNISHMENT_FOR_DEATH
 
     #compute discounted rewards
     discounted_formula = np.frompyfunc(lambda x, y: DISCOUNT_FACTOR * x + y, 2, 1)
