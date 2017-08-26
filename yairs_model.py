@@ -24,7 +24,7 @@ KEEP_RATE = 0.9
 EPSILON_FOR_EXPLORATION = 0.01
 
 #Model constants
-MAX_GAMES = 1000
+MAX_GAMES = 4000
 STEPS_UNTIL_BACKPROP = 100
 BATCH_SIZE = 5
 
@@ -170,10 +170,15 @@ def main():
 
 
         while episode_number < MAX_GAMES:
+            #if reads the same state over and over we assume the connection was lost.
             wait_if_connection_lost(states)
 
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+
+            #if from some reason the bot died and the message for it got lost, we check it here.
+            if(not is_dead):
+                check_if_died(raw_scores[-1],score)         #TODO: this function returns a boolean... right now you do nothing
 
             #if default takes the score from last step
             if(score == 0):
