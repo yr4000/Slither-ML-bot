@@ -899,7 +899,6 @@ var bot = window.bot = (function() {
         },
 
         // Main bot
-        //TODO: might be this is the part we will need to modify
         go: function() {
             bot.every();
 
@@ -1009,27 +1008,27 @@ var bot = window.bot = (function() {
         //gets x and y coordinates of a point in game unit, and return the closest index
         //to it in the label_map.
         //in case of failure returns -1;
-        getIndexFromXY_old: function(x,y){
-            var head = [window.snake.xx, window.snake.yy];
-            var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
-                bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize))];
-            var index = bot.mapSize*offsets[1] + offsets[0];
-            //if index is out of boundary
-            if(index <0 || index > Math.pow(bot.mapSize,2) - 1){
-                index = -1;
-            }
-            return index;
-        },
-
         getIndexFromXY: function(x,y){
             var head = [window.snake.xx, window.snake.yy];
             var index = -1;
+            var x_offset, y_offset;
             if((Math.abs(x - head[0]) > bot.mapSize/2 * bot.offsetSize) || (Math.abs(y - head[1]) > bot.mapSize/2 * bot.offsetSize)){
                 return -1;
             }
-            var offsets = [bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize)),
-                bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize))];
-            index = bot.mapSize*offsets[1] + offsets[0];
+            if(x > head[0]){
+                x_offset = bot.mapSize/2 + (Math.floor((x - head[0])/bot.offsetSize));
+            }
+            else {
+                x_offset = bot.mapSize/2 + (Math.ceil((x - head[0])/bot.offsetSize));
+            }
+            if(y < head[1]){
+                y_offset = bot.mapSize/2 + (Math.floor((head[1] - y)/bot.offsetSize));
+            }
+            else{
+                y_offset = bot.mapSize/2 + (Math.ceil((head[1] - y)/bot.offsetSize));
+            }
+
+            index = bot.mapSize*y_offset + x_offset;
             return index;
         },
 
@@ -1100,44 +1099,34 @@ var bot = window.bot = (function() {
             //console.log('finished markClockwise');
         },
 
-        markEdge_old: function(){
-            console.log('entered markEdge');
-            for(var i = 0 ; i < bot.mapSize**2 ; i++){
-                ind_x = ((i % bot.mapSize) * bot.offsetSize) + window.snake.xx;
-                ind_y = window.snake.yy - (Math.floor(i / bot.mapSize) * bot.offsetSize);
-                //var p = bot.getPointFromIndex(i);
-                if(i%200 == 0){
-                    console.log('ind_x: ' + ind_x + ' ind_y: ' + ind_y)
-                    console.log('dist: ' + canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y))
-                    console.log('radius: ' + Math.pow(bot.MAP_R - 200, 2))
-                }
-                if (canvasUtil.getDistance2(bot.MID_X, bot.MID_Y, ind_x, ind_y) >
-                    Math.pow(bot.MAP_R - 200, 2)){
-                    //console.log('updating label_map[' + i + ']')
-                    bot.label_map[i] = -1;
-                }
-            }
-
-        },
-
         //Updates all the points in label_map which are close to enemy snakes
         lableMapBySnakes: function(){
-            var index = -1;
-            var point = {};
+            var indexes = [];
+            var cp = {};        //center point
             for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
                 if (window.snakes[snake].id !== window.snake.id &&
                     window.snakes[snake].alive_amt === 1) {
                     for (var pt = 0, pts = window.snakes[snake].pts.length; pt < pts; pt++){
                         if(!window.snakes[snake].pts[pt].dying){
-                            point = {
+                            cp = {
                                 x: window.snakes[snake].pts[pt].xx,
-                                y: window.snakes[snake].pts[pt].yy
+                                y: window.snakes[snake].pts[pt].yy,
+                                r: bot.getSnakeWidth(window.snakes[snake].sc) / 2
                             };
-                            index = bot.getIndexFromXY(point.x,point.y);
+                            //appending all possible indexes
+                            indexes.push(bot.getIndexFromXY(cp.x,cp.y));
+                            indexes.push(bot.getIndexFromXY(cp.x + cp.r,cp.y));
+                            indexes.push(bot.getIndexFromXY(cp.x - cp.r,cp.y));
+                            indexes.push(bot.getIndexFromXY(cp.x,cp.y + cp.r));
+                            indexes.push(bot.getIndexFromXY(cp.x,cp.y - cp.r));
+
                         }
-                        if (!((index < 0) || index > bot.mapSize**2)){
-                            bot.label_map[index] = bot.enemyLabel;
+                        for(var i = 0; i < indexes.length; i++){
+                            if (!((indexes[i] < 0) || indexes[i] > bot.mapSize**2)){
+                                bot.label_map[indexes[i]] = bot.enemyLabel;
+                            }
                         }
+                        indexes = [];
                     }
                 }
             }
