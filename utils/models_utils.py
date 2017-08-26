@@ -119,6 +119,11 @@ def raw_score_reward(raw_score, is_dead):
 
     return raw_score[1:]
 
+def check_if_died(previous_score, current_score):
+    delta = 20
+    return current_score - previous_score > delta
+
+
 
 def wait_for_game_to_start():
     obsrv, score, is_dead, request_id, default  = get_observation()
