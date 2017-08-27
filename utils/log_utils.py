@@ -12,6 +12,7 @@ class Logger:
 			self.file_name = file_name + '_' + str(t.tm_mday) + '_' + str(t.tm_mon) + '_' + str(t.tm_year) +\
 							 '_' + str(t.tm_hour) + '_' + str(t.tm_min) + '_' + str(t.tm_sec) + '.log'
 		return
+
 	def write_to_log (self, message, type='info'):
 		logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=self.file_name, level=logging.DEBUG)
 		if (type == 'info'):

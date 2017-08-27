@@ -45,19 +45,22 @@ def calc_reward_from_raw(score_arr , is_dead):
         rewards[-1] = PUNISHMENT_FOR_DEATH
 
     #compute discounted rewards
-    discounted_formula = np.frompyfunc(lambda x, y: DISCOUNT_FACTOR * x + y, 2, 1)
-    cumulative_discounted_rewards= np.flip(
-                discounted_formula.accumulate(np.flip(rewards, 0), dtype=np.object).astype(np.double),0)
+    cumulative_discounted_rewards = np.zeros_like(len(rewards))
+    partial_sum = 0
+    for i in reversed(range(0, len(rewards))):
+        partial_sum = partial_sum * DISCOUNT_FACTOR + rewards[i]
+        discounted_rewards[i] = partial_sum
 
     #boost relevant rewards
     #boosted_processed_rewards = boost( (rewards > 0) ,(rewards < NO_REWARD_PENALTY)
     #
     #                                    , cumulative_discounted_rewards)
-    #normalize
-    normalized_rewards = np.divide(cumulative_discounted_rewards, np.std(cumulative_discounted_rewards))
-    normalized_rewards = np.add (normalized_rewards , -np.mean(normalized_rewards))
 
-    return normalized_rewards
+    #normalize
+    cumulative_discounted_rewards \= np.std(cumulative_discounted_rewards)
+    cumulative_discounted_rewards -= np.mean(normalized_rewards)
+
+    return cumulative_discounted_rewards
 
 def main():
     a = np.array(range(60))
@@ -68,3 +71,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# discounting using numpy
+'''
+    # compute discounted rewards
+    discounted_formula = np.frompyfunc(lambda x, y: DISCOUNT_FACTOR * x + y, 2, 1)
+    cumulative_discounted_rewards = np.flip(
+        discounted_formula.accumulate(np.flip(rewards, 0), dtype=np.object).astype(np.double), 0)
+'''

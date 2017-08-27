@@ -43,8 +43,8 @@ LOAD_WEIGHTS = False
 BEGINING_SCORE = 10
 
 #initialize logger:
-logger_parameters = Logger('Tom_parmameters')
 logger_scores = Logger('Tom_scores')
+logger_parameters = Logger('Tom_parmameters')
 
 
 
