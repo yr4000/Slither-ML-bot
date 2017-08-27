@@ -264,7 +264,7 @@ def main():
                 episode_number += 1
                 # nullify step_counter:
                 step_counter = 0
-
+                print("done calculating grads")
                 # Do the training step
                 if (episode_number % BATCH_SIZE == 0):
                     print("taking the update step")
@@ -290,6 +290,10 @@ def main():
                     with open(WEIGHTS_FILE, 'wb') as f:
                         pkl.dump(sess.run(tvars), f, protocol=2)
 
+                    # plot FINAL graphs
+                    plot_graph(final_scores, "test - tom", "test - tom - scores.png")
+                    plot_graph(avg_scores_per_batch, "test - tom", "test - tom - score by batches.png")
+
                     #prepare for next batch
                     logger_scores.write_spacer()
                     episode_scores = []
@@ -307,7 +311,7 @@ def main():
     logger_scores.write_to_log("proportion of manual_prob".format(manual_prob_counter/MAX_EPISODES))
     logger_scores.write_to_log("avg size of prob_deviation from 1".format(prob_deviation_sum/manual_prob_counter))
 
-    #plot graphs
+    #plot FINAL graphs
     plot_graph(final_scores,"test - tom","test - tom - scores.png")
     plot_graph(avg_scores_per_batch,"test - tom","test - tom - score by batches.png")
 

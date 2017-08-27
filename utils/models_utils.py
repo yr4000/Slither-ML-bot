@@ -11,7 +11,7 @@ from datetime import datetime
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = 32
-INNER_INPUT_SIZE = 576
+INNER_INPUT_SIZE = 400
 
 #TODO: is it fine that this function is here?
 #TODO: fix according to Carmels version
