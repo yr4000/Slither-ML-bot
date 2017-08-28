@@ -92,13 +92,13 @@ def choose_action(index,request_id):
 
 #a simple reward function to begin with
 def get_reward(score_arr,is_dead):
-    no_gain_punishment = 1
-    death_punishment = -750
+    no_gain_punishment = 0.05
+    death_punishment = -100
 
     if(len(score_arr) == 1):
         return np.array([0]) # worst case TODO : i think should never happen im model
 
-    rewards = np.diff(score_arr)    #convert raw score to points earned/lost per step
+    rewards = np.diff(score_arr).astype(np.float32)    #convert raw score to points earned/lost per step
 
     #boost positive rewards and decay negative once
     for i in range(len(rewards)):
@@ -111,7 +111,7 @@ def get_reward(score_arr,is_dead):
     return rewards
 
 def raw_score_reward(raw_score, is_dead):
-    death_punishment = -500
+    death_punishment = -100
 
     #punish if reward didn't change
     if (is_dead):
@@ -120,8 +120,12 @@ def raw_score_reward(raw_score, is_dead):
     return raw_score[1:]
 
 def check_if_died(previous_score, current_score):
-    delta = 20
-    return current_score - previous_score > delta
+    delta = 25      #TODO: arbitrary value
+    is_dead = previous_score - current_score > delta
+    if(is_dead):
+        print("I think the bot died and we missed it.")
+        print("current score: " + str(current_score) + ", previous score: " + str(previous_score))
+    return is_dead
 
 
 
@@ -134,7 +138,7 @@ def wait_for_game_to_start():
 #if from some reason the the connection got lost, stops the game
 #TODO: what if the bot just went on in an empty area? technically it should change from time to time because the bot itself
 def wait_if_connection_lost(observations):
-    look_back = 5
+    look_back = 10
     do_write = True
     if(not len(observations) < look_back):
         last_seen = observations[-1]
@@ -159,4 +163,5 @@ def wait_if_connection_lost(observations):
             with open('observation.json', 'w') as outfile:
                 json.dump(data, outfile)
 
+            print("I think the connection was lost...")
             wait_for_game_to_start()
