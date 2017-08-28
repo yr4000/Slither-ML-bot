@@ -25,13 +25,13 @@ EPSILON_FOR_EXPLORATION = 0.01
 
 #Model constants
 MAX_GAMES = 4000
-STEPS_UNTIL_BACKPROP = 100
-BATCH_SIZE = 5
+STEPS_UNTIL_BACKPROP = 100      #TODO: make this smaller?
+BATCH_SIZE = 10
 
 #Load and save constants
 WEIGHTS_FILE = 'weights.pkl'
 BEST_WEIGHTS = 'best_weights.pkl'
-LOAD_WEIGHTS = False
+LOAD_WEIGHTS = True
 
 #other constants:
 BEGINING_SCORE = 10
@@ -171,14 +171,14 @@ def main():
 
         while episode_number < MAX_GAMES:
             #if reads the same state over and over we assume the connection was lost.
-            wait_if_connection_lost(states)
+            #wait_if_connection_lost(states)        #TODO: this function doesn't seem to work
 
             #get data and process score to reward
             obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
 
             #if from some reason the bot died and the message for it got lost, we check it here.
             if(not is_dead):
-                check_if_died(raw_scores[-1],score)         #TODO: this function returns a boolean... right now you do nothing
+                is_dead = check_if_died(raw_scores[-1],score)
 
             #if default takes the score from last step
             if(score == 0):
@@ -189,11 +189,6 @@ def main():
             # TODO: for debug
             #is_dead = False
             default_data_counter += default_obsrv
-
-            #TODO: simple reward function
-            #reward = get_reward(raw_scores, is_dead)
-
-            #TODO: for debug
             vars = sess.run(tvars)
 
             # append the relevant observation to the following action, to states
