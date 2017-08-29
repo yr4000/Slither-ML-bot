@@ -28,7 +28,7 @@ EPSILON_FOR_EXPLORATION = 0.05
 LEARNING_RATE = 1e-4
 
 #Model constants
-EPISODE_SIZE = 20
+EPISODE_SIZE = 50
 BATCH_SIZE = 50
 MAX_EPISODES = EPISODE_SIZE*BATCH_SIZE*10000
 
@@ -236,17 +236,6 @@ def main():
                 modified_rewards_sums = np.reshape(processed_rewards, [1, len(processed_rewards)])
                 # modify actions_booleans to be an array of booleans
                 actions_booleans = (np.array(actions_booleans)) == 1
-
-                '''
-                # create the rewards sums of the reversed rewards array
-                rewards_sums = np.cumsum(processed_rewards[::-1])
-                # normalize prizes and reverse
-                rewards_sums = decrese_rewards(rewards_sums[::-1])
-                rewards_sums -= np.mean(rewards_sums)
-                rewards_sums = np.divide(rewards_sums, np.std(rewards_sums))
-                logger.write_to_log("rewards_sums: " + str(rewards_sums))
-                '''
-
 
                 #TODO: showind process results for debugging:
                 fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,

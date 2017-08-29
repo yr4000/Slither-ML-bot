@@ -45,7 +45,6 @@ def calc_reward_from_raw(score_arr , is_dead):
     #boosted_processed_rewards = boost( (rewards > 0) ,(rewards < NO_REWARD_PENALTY)
     #                                    , cumulative_discounted_rewards)
     #normalize
-    print (cumulative_discounted_rewards)
     cumulative_discounted_rewards /= np.std(cumulative_discounted_rewards)
     cumulative_discounted_rewards -= np.mean(cumulative_discounted_rewards)
 
