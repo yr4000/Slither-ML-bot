@@ -2,12 +2,12 @@ import tensorflow as tf
 import numpy as np
 
 #CNN constants
+NUM_OF_FRAMES = 4
 OUTPUT_DIM = 64
-INPUT_DIM = 576
-SQRT_INPUT_DIM  = 24 #IN ORDER TO RESHAPE INTO TENSOR
+SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
+INPUT_DIM = SQRT_INPUT_DIM*SQRT_INPUT_DIM
 PLN = 2                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
-NUM_OF_CHANNELS_LAYER1 = 1
 NUM_OF_CHANNELS_LAYER2 = 16     #TODO: Is that really what suppose to be here?
 NUM_OF_CHANNELS_LAYER3 = 32
 SIZE_OF_FULLY_CONNECTED_LAYER_1 = 256
@@ -57,12 +57,12 @@ def create_fully_connected_layer(input, f, w_name, w_shape, b_name, b_shape, wit
 
 def create_CNN():
 
-    input_layer = tf.placeholder(tf.float32, [None, None, INPUT_DIM])
+    input_layer = tf.placeholder(tf.float32, [None,NUM_OF_FRAMES,INPUT_DIM])
 
     #CNN:
-    reshape_input = tf.reshape(input_layer, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_CHANNELS_LAYER1])
+    reshape_input = tf.reshape(input_layer, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM,NUM_OF_FRAMES])
     #first layer: conv + pool
-    conv1 = create_conv_layer(reshape_input,'wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER1 , NUM_OF_CHANNELS_LAYER2],
+    conv1 = create_conv_layer(reshape_input,'wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE ,  NUM_OF_FRAMES , NUM_OF_CHANNELS_LAYER2],
                               'bc1', [NUM_OF_CHANNELS_LAYER2], with_polling=True)
     #second layer: conv + pool
     conv2 = create_conv_layer(conv1,'wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3],

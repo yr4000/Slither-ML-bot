@@ -253,7 +253,7 @@ def main():
                 episode_number += 1
                 # nullify step_counter:
                 step_counter = 0
-                print("done calculating grads")
+                #print("done calculating grads")
                 # Do the training step
                 if (episode_number % BATCH_SIZE == 0):
                     print("taking the update step")
