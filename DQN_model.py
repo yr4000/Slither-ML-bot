@@ -268,4 +268,4 @@ if __name__ == '__main__':
         while agent.step_number < MAX_STEPS:
             agent.take_one_step()
         avg_scores_per_game.append(agent.test())
-        plot_graph(avg_scores_per_game ,"avg score per epoch " ,"DQN - avg score by epoch" )
+        plot_graph(avg_scores_per_game ,"avg_score_per_epoch" ,"DQN_avg_score_by_epoch" )
