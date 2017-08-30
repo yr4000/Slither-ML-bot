@@ -17,17 +17,17 @@ import tensorflow as tf
 
 #MODEL CONSTANTS
 
-VAR_NO = 12  # number of Ws and bs (the variables)
-EPSILON_FOR_EXPLORATION = 0.01
+VAR_NO = DQN_params['VAR_NO']  # number of Ws and bs (the variables)
+EPSILON_FOR_EXPLORATION = DQN_params['EPSILON_FOR_EXPLORATION']
 
 # Model constants
-MAX_STEPS = 10000
-NUM_OF_EPOCHS = 25
-NUM_OF_GAMES_FOR_TEST = 10
+MAX_STEPS = DQN_params['MAX_STEPS']
+NUM_OF_EPOCHS = DQN_params['NUM_OF_EPOCHS']
+NUM_OF_GAMES_FOR_TEST = DQN_params['NUM_OF_GAMES_FOR_TEST']
 
 # Load and save constants
-WEIGHTS_FILE = 'weights.pkl'
-LOAD_WEIGHTS = False
+WEIGHTS_FILE = DQN_params['WEIGHTS_FILE']
+LOAD_WEIGHTS = DQN_params['LOAD_WEIGHTS']
 
 #game constants:
 BEGINING_SCORE = 10
@@ -38,21 +38,21 @@ logger = Logger('DQN_test')
 class Agent:
     # agent's constants:
     #net constants
-    LEARN_RATE = 1e-6
+    LEARN_RATE = DQN_params['LEARN_RATE']
 
     #variables sizes
-    FRAMES_PER_OBSERVATION = 4      #TODO: in the original code it was 4, we need to figure out what he expected to get...
-    LAST_RAW_SCORES_SIZE = 200 #TODO : could be as low as 2 , but to keep a buffer
-    MEMORY_SIZE = 5000
+    FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']      #TODO: in the original code it was 4, we need to figure out what he expected to get...
+    LAST_RAW_SCORES_SIZE = DQN_params['LAST_RAW_SCORES_SIZE'] #TODO : could be as low as 2 , but to keep a buffer
+    MEMORY_SIZE = DQN_params['MEMORY_SIZE']
 
     #logic constants:
-    MIN_MEMORY_SIZE_FOR_TRAINING = 3000
-    MINI_BATCH_SIZE = 300
-    FUTURE_REWARD_DISCOUNT = 0.99
+    MIN_MEMORY_SIZE_FOR_TRAINING = DQN_params['MIN_MEMORY_SIZE_FOR_TRAINING']
+    MINI_BATCH_SIZE = DQN_params['MINI_BATCH_SIZE']
+    FUTURE_REWARD_DISCOUNT = DQN_params['FUTURE_REWARD_DISCOUNT']
 
     #action constants:
-    INITIAL_RANDOM_ACTION_PROB = 1  # starting chance of an action being random   #TODO: should be 1
-    FINAL_RANDOM_ACTION_PROB = 0.05  # final chance of an action being random
+    INITIAL_RANDOM_ACTION_PROB = DQN_params['INITIAL_RANDOM_ACTION_PROB']  # starting chance of an action being random
+    FINAL_RANDOM_ACTION_PROB = DQN_params['FINAL_RANDOM_ACTION_PROB']  # final chance of an action being random
     CONST_DECREASE_IN_EXPLORATION = \
         (INITIAL_RANDOM_ACTION_PROB-FINAL_RANDOM_ACTION_PROB)/MAX_STEPS
 
@@ -60,7 +60,7 @@ class Agent:
     OBS_LAST_STATE_INDEX, OBS_ACTION_INDEX, OBS_REWARD_INDEX, OBS_CURRENT_STATE_INDEX, OBS_TERMINAL_INDEX = range(5)
 
     # do write to log?
-    WRITE_TO_LOG_EVERY = 500
+    WRITE_TO_LOG_EVERY = DQN_params['WRITE_TO_LOG_EVERY']
 
     def __init__(self):
         #variables to train the net

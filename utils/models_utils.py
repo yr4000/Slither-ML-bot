@@ -17,8 +17,8 @@ with open('parameters/DQN_Params.json') as json_data:
     DQN_params = json.load(json_data)
 
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
-SLICES_NO = DQN_params['SLICES_NO']
-INNER_INPUT_SIZE = DQN_params['INPUT_DIM']
+SLICES_NO = PG_params['SLICES_NO']
+INNER_INPUT_SIZE = PG_params['INPUT_DIM']
 
 #TODO: is it fine that this function is here?
 #TODO: fix according to Carmels version

@@ -1,20 +1,26 @@
 import tensorflow as tf
 import numpy as np
+import math
+import json
+
+with open('parameters/CNN_Params.json') as json_data:
+    CNN_params = json.load(json_data)
 
 #CNN constants
-NUM_OF_FRAMES = 4
-OUTPUT_DIM = 64
-SQRT_INPUT_DIM  = 20 #IN ORDER TO RESHAPE INTO TENSOR
-INPUT_DIM = SQRT_INPUT_DIM*SQRT_INPUT_DIM
-PLN = 2                     #Pool Layers Number
+NUM_OF_FRAMES = CNN_params['FRAMES_PER_OBSERVATION']
+OUTPUT_DIM = CNN_params['OUTPUT_DIM']
+INPUT_DIM = CNN_params['INPUT_DIM']
+SQRT_INPUT_DIM  = int(INPUT_DIM**0.5)
+PLN = CNN_params['PLN']                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
-NUM_OF_CHANNELS_LAYER2 = 16     #TODO: Is that really what suppose to be here?
-NUM_OF_CHANNELS_LAYER3 = 32
-SIZE_OF_FULLY_CONNECTED_LAYER_1 = 256
-SIZE_OF_FULLY_CONNECTED_LAYER_2 = 128
-SIZE_OF_FULLY_CONNECTED_LAYER_3 = 64
+NUM_OF_CHANNELS_LAYER1 = CNN_params['NUM_OF_CHANNELS_LAYER1']
+NUM_OF_CHANNELS_LAYER2 = CNN_params['NUM_OF_CHANNELS_LAYER2']      #TODO: Is the value 16 really what suppose to be here?
+NUM_OF_CHANNELS_LAYER3 = CNN_params['NUM_OF_CHANNELS_LAYER3']
+SIZE_OF_FULLY_CONNECTED_LAYER_1 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_1']
+SIZE_OF_FULLY_CONNECTED_LAYER_2 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_2']
+SIZE_OF_FULLY_CONNECTED_LAYER_3 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_3']
 
-KEEP_RATE = 0.9
+KEEP_RATE = CNN_params['KEEP_RATE']
 
 
 
