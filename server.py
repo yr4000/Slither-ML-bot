@@ -7,11 +7,12 @@ import time as t
 app = Flask(__name__)
 cors = CORS(app)        #This is needed for the server to be able to send responses
 
-
+'''
 @app.route('/')
 def output():
     return render_template('index.html', name='Joe')
     #return redirect("This is a temporary implementation.")
+'''
 
 #this route will get the data from the client, send it to the agent and then send the result back to the client.
 @app.route('/model',methods = ['POST'])
