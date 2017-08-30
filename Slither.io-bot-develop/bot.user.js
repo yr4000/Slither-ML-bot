@@ -410,6 +410,9 @@ var bot = window.bot = (function() {
         smallFoodLabel: 100,
         mediumFoodLabel: 150,
         largeFoodLabel: 200,
+        //TODO: new property
+        currentBotDirection:{},
+        currentBotAcceleration:{},
 
         //TODO: ML debug vriables
         message_id: 1,
@@ -985,6 +988,16 @@ var bot = window.bot = (function() {
             bot.MAP_R = window.grd * 0.98;
             bot.MID_X = window.grd;
             bot.MID_Y = window.grd;
+        },
+
+        //this function gets mouse coordinate and converts it to the nearest "slice" index
+        getSliceIndexFromMouseCoor:function(x,y){
+            var theta = Math.atan2(y,x); // y first!
+            theta = (theta + (2*Math.PI)) % (2*Math.PI);//get theta in range[0,2*PI]
+            //TODO: convert theta to our coordinates
+            var index = (theta + (0.5 * bot.MOVEMENT_OFFSET )) / bot.MOVEMENT_OFFSET;//get the closest slice
+            index = Math.floor(index);
+            return index;
         },
 
         //This function gets the players current score
