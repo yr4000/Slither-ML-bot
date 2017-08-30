@@ -1723,7 +1723,10 @@ var userInterface = window.userInterface = (function() {
             else if (bot.isBotEnabled && bot.isBotRunning) {
                 console.log('snake died');      //TODO: for debug
                 bot.isBotRunning = false;
-                bot.sendData();
+                //send message 3 times:
+                for(var i=0; i<3; i++){
+                    bot.sendData();
+                }
                 if (window.lastscore && window.lastscore.childNodes[1]) {
                     bot.scores.push(parseInt(window.lastscore.childNodes[1].innerHTML));
                     bot.scores.sort(function(a, b) {
