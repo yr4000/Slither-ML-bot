@@ -94,7 +94,8 @@ def choose_action(index,request_id):
     return {
         'action': int(index%SLICES_NO),
         'do_accelerate': int(index//SLICES_NO),
-        'request_id': request_id
+        'request_id': request_id,
+        'commit_sucide': False
     }
 
 #a simple reward function to begin with
@@ -134,13 +135,23 @@ def check_if_died(previous_score, current_score):
         print("current score: " + str(current_score) + ", previous score: " + str(previous_score))
     return is_dead
 
-
-
 def wait_for_game_to_start():
     obsrv, score, is_dead, request_id, default  = get_observation()
     while(is_dead):
         time.sleep(0.5)
         obsrv, score, is_dead, request_id, default = get_observation()
+
+def commit_sucide():
+    action = {
+        'action': 0,
+        'do_accelerate': 0,
+        'request_id': -1,
+        'commit_sucide': True
+    }
+
+    with open('action.json', 'w') as outfile:
+        json.dump(action, outfile)
+    return True
 
 #if from some reason the the connection got lost, stops the game
 #TODO: what if the bot just went on in an empty area? technically it should change from time to time because the bot itself

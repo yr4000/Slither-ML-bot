@@ -172,6 +172,7 @@ class Agent:
 
         #if the bot died restart the observation and raw_score_counting
         if(is_dead):
+            print("just died!")
             self.last_state = None
             self.last_raw_scores.clear()
             self.last_raw_scores.append(BEGINING_SCORE)
@@ -183,9 +184,11 @@ class Agent:
             logger.write_spacer()
 
         self.step_number += 1
+        wait_for_game_to_start()
 
     #TODO: check how long this takes, and if there is a better way to do the train (currently it's an exact copy of the origin)
     def train(self):
+        start_time = time.time()
         # sample a mini_batch to train on
         mini_batch = random.sample(self.memory, self.MINI_BATCH_SIZE)
         # get the batch variables
@@ -212,6 +215,8 @@ class Agent:
             self.input_layer: previous_states,
             self.actions: actions,
             self.targets: agents_expected_reward})
+
+        #print("the training took {} time to run".format(time.time() - start_time))
 
 
 
@@ -240,10 +245,11 @@ class Agent:
         print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
         scores = []
         frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
-        #wait for game to end
-        while(not is_dead):
-            frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
-            time.sleep(0.05)
+        #force an ending of the game.
+        #problem: in current implementation the bot dies twice...
+        if(not is_dead):
+            commit_sucide()
+            time.sleep(0.25)
         #run NUM_OF_GAMES_FOR_TEST of games and avarage their score
         for i in range(NUM_OF_GAMES_FOR_TEST):
             wait_for_game_to_start()
@@ -257,6 +263,7 @@ class Agent:
                 #get next observation
                 frame, score, is_dead, request_id, default_obsrv = get_observation()
                 state = np.append(state[1:], [frame], axis=0)
+            print("just died!")
             scores.append(score)
             state = None
 
@@ -277,7 +284,6 @@ if __name__ == '__main__':
         agent.step_number = 0
         #loop over k steps
         while agent.step_number < MAX_STEPS:
-            wait_for_game_to_start()
             agent.take_one_step()
         avg_scores_per_game.append(agent.evaluate())
         logger.write_to_log("avg_scores_per_game" + str(avg_scores_per_game))

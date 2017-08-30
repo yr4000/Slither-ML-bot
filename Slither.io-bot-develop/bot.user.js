@@ -949,10 +949,6 @@ var bot = window.bot = (function() {
                 minutes: time.getMinutes(),
                 seconds: time.getSeconds(),
                 /*
-                snake: window.snake, //TODO: don't send the snake, just send whether he's Null (game finished)
-                snake: window.snake,
-                snakes: window.snakes,
-                foods: window.foods,
                 //preys: window.preys,
                 */
                 x: bot.direction.x,
@@ -960,16 +956,22 @@ var bot = window.bot = (function() {
                 r: 100
             };
             bot.message_id++;
-            //console.log("Started ajax");
             $.ajax({
                     type:    "POST",
                     url:     'http://localhost:5000/model',
                     data:    JSON.stringify(features),
                     success: function(data) {
-                        //console.log("entered model function.");
-                        //console.log(data);
-                        bot.setDirection(data.action);
-                        window.setAcceleration(data.do_accelerate);
+                        if(data.commit_sucide){
+                            userInterface.quit();
+                            for(var i = 0; i < 25; i++){
+                                //this for is for some time to pass
+                            }
+                            window.connect();
+                        }
+                        else{
+                            bot.setDirection(data.action);
+                            window.setAcceleration(data.do_accelerate);
+                        }
                         //console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
                         //console.log('Action chosen: ' + data.action);
 

@@ -42,7 +42,8 @@ def ask_model():
     except:
         res = {'action': 0,
                'do_accelerate': 0,
-               'request_id': -1}        #TODO: change to a better default
+               'request_id': -1,
+               'commit_sucide': False}        #TODO: change to a better default
 
     # calculate angle using r and x
 
