@@ -94,8 +94,9 @@ class Agent:
         self.last_raw_scores = deque()
         self.last_raw_scores.append(BEGINING_SCORE)
 
-        #to count the episodes:
+        #time and evaluation variables:
         self.step_number = 0
+        self.epoch_no = 0
 
         # check if file is not empty
         if (os.path.isfile(WEIGHTS_FILE) and LOAD_WEIGHTS):
@@ -108,10 +109,11 @@ class Agent:
     def take_action(self,request_id):
         # TODO : how to decay is always up for debate
         #gradually desrease epsilon, in epsilon greedy policy
-        if self.probability_of_random_action > self.FINAL_RANDOM_ACTION_PROB \
-                and len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING:
-
+        if((self.probability_of_random_action > self.FINAL_RANDOM_ACTION_PROB)
+           and (len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING)):
             self.probability_of_random_action -= self.CONST_DECREASE_IN_EXPLORATION
+            if (self.step_number % self.WRITE_TO_LOG_EVERY == 0):
+                logger.write_to_log("probability_of_random_action: " + str(self.probability_of_random_action))
 
         #select an action according to the Q function with epsilon greedy
         new_action = np.zeros([OUTPUT_DIM])
@@ -122,7 +124,7 @@ class Agent:
         else:
             # choose an action given our last state
             readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [self.last_state]})#TODO: [0]
-            if self.step_number % self.WRITE_TO_LOG_EVERY ==0:
+            if(self.step_number % self.WRITE_TO_LOG_EVERY ==0):
                 logger.write_to_log("Action Q-Values are {}".format(readout_t))
             action_index = np.argmax(readout_t)
 
@@ -148,6 +150,9 @@ class Agent:
         self.last_raw_scores.append(score)
         if(len(self.last_raw_scores) > self.LAST_RAW_SCORES_SIZE):
             self.last_raw_scores.popleft()
+        if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
+            logger.write_to_log("Last raw scores: " + str(self.last_raw_scores))
+            print("Avarage raw score for epoch %d step %d: %0.2f" % (self.epoch_no,self.step_number,np.average(self.last_raw_scores)))
 
         #getting reward:
         reward = self.get_reward(self.last_raw_scores,is_dead)
@@ -171,10 +176,13 @@ class Agent:
             self.last_raw_scores.clear()
             self.last_raw_scores.append(BEGINING_SCORE)
 
-        self.step_number += 1
         time.sleep(0.05)            #TODO: is this necessary?
         #TODO: make sure
         self.last_state = current_state
+        if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
+            logger.write_spacer()
+
+        self.step_number += 1
 
     #TODO: check how long this takes, and if there is a better way to do the train (currently it's an exact copy of the origin)
     def train(self):
@@ -195,6 +203,9 @@ class Agent:
             else:
                 agents_expected_reward.append(
                     rewards[i] + self.FUTURE_REWARD_DISCOUNT * np.max(agents_reward_per_action[i]))
+
+        if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
+            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))
 
         # learn that these actions in these states lead to this reward
         self.sess.run(self.train_operation, feed_dict={
@@ -225,15 +236,18 @@ class Agent:
         with open(WEIGHTS_FILE, 'wb') as f:
             pkl.dump(self.sess.run(self.tvars), f, protocol=2)
 
-    def test(self):
+    def evaluate(self):
+        print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
         scores = []
         frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+        #wait for game to end
         while(not is_dead):
             frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+            time.sleep(0.05)
         #run NUM_OF_GAMES_FOR_TEST of games and avarage their score
         for i in range(NUM_OF_GAMES_FOR_TEST):
-            while (is_dead):
-                frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+            wait_for_game_to_start()
+            frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
             state = np.stack(tuple(frame for i in range(self.FRAMES_PER_OBSERVATION)))
             while (not is_dead):
                 #feed forward pass
@@ -243,29 +257,32 @@ class Agent:
                 #get next observation
                 frame, score, is_dead, request_id, default_obsrv = get_observation()
                 state = np.append(state[1:], [frame], axis=0)
+            scores.append(score)
+            state = None
 
-            if(is_dead):
-                scores.append(score)
-                state = None
-
+        print("finished evaluation.")
         return(np.average(scores))
 
 
 if __name__ == '__main__':
-
     #initialize agent
     avg_scores_per_game = []
     agent = Agent()
     #test first time with random weights for baseline
-    avg_scores_per_game.append(agent.test())
-    for i in range(1 , NUM_OF_EPOCHS+1):
-        if 1/i >= agent.FINAL_RANDOM_ACTION_PROB:
-            agent.INITIAL_RANDOM_ACTION_PROB = 1/i
-
+    print("evaluationg random movements")
+    avg_scores_per_game.append(agent.evaluate())
+    #the division of steps to epochs is for evaluation
+    while(agent.epoch_no < NUM_OF_EPOCHS):
+        print("experiment started!")
         agent.step_number = 0
-
         #loop over k steps
         while agent.step_number < MAX_STEPS:
+            wait_for_game_to_start()
             agent.take_one_step()
-        avg_scores_per_game.append(agent.test())
+        avg_scores_per_game.append(agent.evaluate())
+        logger.write_to_log("avg_scores_per_game" + str(avg_scores_per_game))
+        agent.epoch_no += 1
+
         plot_graph(avg_scores_per_game ,"avg_score_per_epoch" ,"DQN_avg_score_by_epoch" )
+
+    print("finished experiement")
