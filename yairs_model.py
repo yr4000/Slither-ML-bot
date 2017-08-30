@@ -5,39 +5,38 @@ from utils.plot_utils import plot_graph
 import pickle as pkl
 import os
 
-
 #CNN constants
-OUTPUT_DIM = 64
-INPUT_DIM = 576
-SQRT_INPUT_DIM  = 24 #IN ORDER TO RESHAPE INTO TENSOR
-PLN = 2                     #Pool Layers Number
+OUTPUT_DIM = PG_params['OUTPUT_DIM']
+INPUT_DIM = PG_params['INPUT_DIM']
+SQRT_INPUT_DIM  = int(math.sqrt(INPUT_DIM)) #IN ORDER TO RESHAPE INTO TENSOR
+PLN = PG_params['PLN']                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
-NUM_OF_CHANNELS_LAYER1 = 1
-NUM_OF_CHANNELS_LAYER2 = 16     #TODO: Is that really what suppose to be here?
-NUM_OF_CHANNELS_LAYER3 = 32
-SIZE_OF_FULLY_CONNECTED_LAYER_1 = 256
-SIZE_OF_FULLY_CONNECTED_LAYER_2 = 128
-SIZE_OF_FULLY_CONNECTED_LAYER_3 = 64
+NUM_OF_CHANNELS_LAYER1 = PG_params['NUM_OF_CHANNELS_LAYER1']
+NUM_OF_CHANNELS_LAYER2 = PG_params['NUM_OF_CHANNELS_LAYER2']     #TODO: Is that really what suppose to be here?
+NUM_OF_CHANNELS_LAYER3 = PG_params['NUM_OF_CHANNELS_LAYER3']
+SIZE_OF_FULLY_CONNECTED_LAYER_1 = PG_params['SIZE_OF_FULLY_CONNECTED_LAYER_1']
+SIZE_OF_FULLY_CONNECTED_LAYER_2 = PG_params['SIZE_OF_FULLY_CONNECTED_LAYER_2']
+SIZE_OF_FULLY_CONNECTED_LAYER_3 = PG_params['SIZE_OF_FULLY_CONNECTED_LAYER_3']
 
-VAR_NO = 12      #number of Ws and bs (the variables)
-KEEP_RATE = 0.9
-EPSILON_FOR_EXPLORATION = 0.01
+VAR_NO = PG_params['VAR_NO']      #number of Ws and bs (the variables)
+KEEP_RATE = PG_params['KEEP_RATE']
+EPSILON_FOR_EXPLORATION = PG_params['EPSILON_FOR_EXPLORATION']
 
 #Model constants
-MAX_GAMES = 4000
-STEPS_UNTIL_BACKPROP = 100      #TODO: make this smaller?
-BATCH_SIZE = 10
+MAX_GAMES = PG_params['MAX_GAMES']
+STEPS_UNTIL_BACKPROP = PG_params['STEPS_UNTIL_BACKPROP']      #TODO: make this smaller?
+BATCH_SIZE = PG_params['BATCH_SIZE']
 
 #Load and save constants
-WEIGHTS_FILE = 'weights.pkl'
-BEST_WEIGHTS = 'best_weights.pkl'
-LOAD_WEIGHTS = True
+WEIGHTS_FILE = PG_params['WEIGHTS_FILE']
+BEST_WEIGHTS = PG_params['BEST_WEIGHTS']
+LOAD_WEIGHTS = PG_params['LOAD_WEIGHTS']
 
 #other constants:
-BEGINING_SCORE = 10
+BEGINING_SCORE = PG_params['BEGINING_SCORE']
 
 #initialize logger:
-WRITE_TO_LOG = 50
+WRITE_TO_LOG = PG_params['WRITE_TO_LOG']
 logger = Logger('Test')
 
 
