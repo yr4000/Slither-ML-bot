@@ -402,8 +402,8 @@ var bot = window.bot = (function() {
         SEND_C: 0,          //send counter
         ML_mode: true,
         //TODO: play with the offset, consider create width and length offsets
-        offsetSize: 40,    //the size of each pixel in label_map is offsetSize^2
-        mapSize: 20,        //The label_map size is mapSize^2
+        offsetSize: 35,    //the size of each pixel in label_map is offsetSize^2
+        mapSize: 24,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
@@ -979,16 +979,18 @@ var bot = window.bot = (function() {
                     url:     'http://localhost:5000/model',
                     data:    JSON.stringify(features),
                     success: function(data) {
-                        if(data.commit_sucide){
-                            userInterface.quit();
-                            for(var i = 0; i < 25; i++){
-                                //this for is for some time to pass
+                        if(bot.ML_mode){
+                            if(data.commit_sucide){
+                                userInterface.quit();
+                                for(var i = 0; i < 25; i++){
+                                    //this for is for some time to pass
+                                }
+                                window.connect();
                             }
-                            window.connect();
-                        }
-                        else{
-                            bot.setDirection(data.action);
-                            window.setAcceleration(data.do_accelerate);
+                            else{
+                                bot.setDirection(data.action);
+                                window.setAcceleration(data.do_accelerate);
+                            }
                         }
                         //console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
                         //console.log('Action chosen: ' + data.action);
