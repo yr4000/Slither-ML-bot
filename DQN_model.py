@@ -65,6 +65,9 @@ class Agent:
     # do write to log?
     WRITE_TO_LOG_EVERY = DQN_params['WRITE_TO_LOG_EVERY']
 
+    #do learn from expert?
+    LEARN_FROM_EXPERT = DQN_params['LEARN_FROM_EXPERT']
+
     def __init__(self):
         #variables to train the net
         self.sess = tf.Session()
@@ -145,7 +148,7 @@ class Agent:
     # take care of the data and store it in the memory
     def take_one_step(self):
         #This part of the code processes the data
-        frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+        frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
 
         #handaling edge cases:
         #connection problems:
@@ -180,7 +183,14 @@ class Agent:
         reward = self.get_reward(self.last_raw_scores,is_dead)
 
         #take an action:
-        self.take_action(request_id)
+        if(self.LEARN_FROM_EXPERT):
+            new_action = np.zeros([OUTPUT_DIM])
+            action_index = AI_action + AI_accel*DQN_params['SLICES_NO']
+            new_action[action_index] = 1
+            self.last_action = new_action
+
+        else:
+            self.take_action(request_id)
 
         #adding observarion to memory:
         #TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
@@ -232,6 +242,7 @@ class Agent:
                     rewards[i] + self.FUTURE_REWARD_DISCOUNT * np.max(agents_reward_per_action[i]))
 
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
+            logger.write_to_log("rewards: " + str(rewards))
             logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))
 
         # learn that these actions in these states lead to this reward
@@ -269,7 +280,7 @@ class Agent:
     def evaluate(self):
         print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
         scores = []
-        frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+        frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
         #force an ending of the game.
         #problem: in current implementation the bot dies twice...
         if(not is_dead):
@@ -278,7 +289,7 @@ class Agent:
         #run NUM_OF_GAMES_FOR_TEST of games and avarage their score
         for i in range(NUM_OF_GAMES_FOR_TEST):
             wait_for_game_to_start()
-            frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+            frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
             state = np.stack(tuple(frame for i in range(self.FRAMES_PER_OBSERVATION)))
             while (not is_dead):
                 #feed forward pass
@@ -286,7 +297,7 @@ class Agent:
                 #choose and send action
                 send_action(np.argmax(readout_t), request_id)
                 #get next observation
-                frame, score, is_dead, request_id, default_obsrv = get_observation()
+                frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
                 state = np.append(state[1:], [frame], axis=0)
             print("just died!")
             scores.append(score)
