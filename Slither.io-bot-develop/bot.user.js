@@ -396,7 +396,7 @@ var bot = window.bot = (function() {
         MAP_R: 0,
 
         //This is for ML mode
-        NUMBER_OF_SLICES : 32 ,
+        NUMBER_OF_SLICES : 32 ,         //MOVEMENT_OFFSET should be Math.PI/(NUMBER_OF_SLICES/2)
         MOVEMENT_OFFSET: Math.PI/16,    //NOTE: the larger the slices the smaller the circle will (because of the comunication speed)
         MOVEMENT_R: 100,
         SEND_C: 0,          //send counter
@@ -956,8 +956,8 @@ var bot = window.bot = (function() {
             bot.updateLabelMap();
             var time = new Date();      //TODO: for debug
             var features = {
-                currentBotDirection: bot.currentBotDirection,
-                currentBotAcceleration: bot.currentBotAcceleration,
+                AI_direction: bot.currentBotDirection,
+                AI_Acceleration: bot.currentBotAcceleration,
                 observation: bot.label_map,
                 score: bot.getMyScore(),
                 is_dead: window.snake == null,

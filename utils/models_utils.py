@@ -67,7 +67,7 @@ def get_observation():
         #print("got default data")      #todo: delte
         data = get_default_data()
         default = 1
-    return data["observation"], data["score"], data["is_dead"],data['message_id'], default
+    return data["observation"], data["score"], data["is_dead"],data['message_id'], default, data['AI_direction'], data['AI_Acceleration']
 
 #TODO: temporary solution, need to fix
 def get_default_data():
@@ -78,9 +78,11 @@ def get_default_data():
         'message_id': -1,
         'currentBotDirection': 0,
         'currentBotAcceleration': 0,
-        'hours': 0,
-        'minutes': 0,
-        'seconds': 0
+        'hours': -1,
+        'minutes': -1,
+        'seconds': -1,
+        'AI_direction': 0,
+        'AI_Acceleration': 0
         }
 
 #TODO: in case of failure send boolean
@@ -141,10 +143,10 @@ def check_if_died(previous_score, current_score):
     return is_dead
 
 def wait_for_game_to_start():
-    obsrv, score, is_dead, request_id, default  = get_observation()
+    obsrv, score, is_dead, request_id, default, AI_action, AI_accel  = get_observation()
     while(is_dead):
         time.sleep(0.5)
-        obsrv, score, is_dead, request_id, default = get_observation()
+        obsrv, score, is_dead, request_id, default, AI_action, AI_accel = get_observation()
 
 def commit_sucide():
     action = {
@@ -181,6 +183,8 @@ def wait_if_connection_lost(observations):
                 'hours': -1,
                 'minutes': -1,
                 'seconds': -1,
+                'AI_direction': 0,
+                'AI_Acceleration': 0
 
             }
             with open('observation.json', 'w') as outfile:

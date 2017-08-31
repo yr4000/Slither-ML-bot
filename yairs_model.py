@@ -173,7 +173,7 @@ def main():
             #wait_if_connection_lost(states)        #TODO: this function doesn't seem to work
 
             #get data and process score to reward
-            obsrv, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+            obsrv, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
 
             #if from some reason the bot died and the message for it got lost, we check it here.
             if(not is_dead):
