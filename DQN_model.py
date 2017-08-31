@@ -67,6 +67,9 @@ class Agent:
 
     #do learn from expert?
     LEARN_FROM_EXPERT = DQN_params['LEARN_FROM_EXPERT']
+    if(LEARN_FROM_EXPERT):
+        print("Learn from expert mode!")
+        logger.write_to_log("Learn from expert mode!")
 
     def __init__(self):
         #variables to train the net
@@ -332,7 +335,7 @@ if __name__ == '__main__':
 
             #TODO: is that sleep necessary??
             if(agent.LEARN_FROM_EXPERT and agent.epoch_no == 0):
-                time.sleep(0.05)        #when learn from expert it runs really reallt fast at the first epoch
+                time.sleep(0.025)        #when learn from expert it runs really reallt fast at the first epoch
         #avg_scores_per_game.append(agent.evaluate())
 
         #save weights and best weights:
