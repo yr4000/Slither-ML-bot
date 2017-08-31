@@ -80,6 +80,8 @@ var canvasUtil = window.canvasUtil = (function() {
 
         // Set direction of snake towards the virtual mouse coordinates
         setMouseCoordinates: function(point) {
+            //for imitation learning
+            bot.currentBotDirection = bot.getSliceIndexFromMouseCoor(point.x,point.y);
             window.xm = point.x;
             window.ym = point.y;
         },
@@ -412,8 +414,8 @@ var bot = window.bot = (function() {
         mediumFoodLabel: 150,
         largeFoodLabel: 200,
         //TODO: new property
-        currentBotDirection:{},
-        currentBotAcceleration:{},
+        currentBotDirection: 0,
+        currentBotAcceleration: 0,
 
         //TODO: ML debug vriables
         message_id: 1,
@@ -483,6 +485,7 @@ var bot = window.bot = (function() {
             };
 
             canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
+
         },
 
         // Avoid collision point by ang
@@ -730,6 +733,8 @@ var bot = window.bot = (function() {
 
                 if (canvasUtil.circleIntersect(headCircle, collisionCircle)) {
                     window.setAcceleration(bot.defaultAccel);
+                    //for imitation learning
+                    bot.currentBotAcceleration = bot.defaultAccel;
                     bot.avoidCollisionPoint(bot.collisionPoints[i]);
                     return true;
                 }
@@ -745,8 +750,13 @@ var bot = window.bot = (function() {
                     if (canvasUtil.circleIntersect(fullHeadCircle, enemyHeadCircle)) {
                         if (window.snakes[bot.collisionPoints[i].snake].sp > 10) {
                             window.setAcceleration(1);
+                            //for imitation learning
+                            bot.currentBotAcceleration = 1;
+
                         } else {
                             window.setAcceleration(bot.defaultAccel);
+                            //for imitation learning
+                            bot.currentBotAcceleration = bot.defaultAccel;
                         }
                         bot.avoidHeadPoint({
                             xx: window.snakes[bot.collisionPoints[i].snake].xx,
@@ -757,6 +767,8 @@ var bot = window.bot = (function() {
                 }
             }
             window.setAcceleration(bot.defaultAccel);
+            //for imitation learning
+            bot.currentBotAcceleration = bot.defaultAccel;
             return false;
         },
 
@@ -920,6 +932,8 @@ var bot = window.bot = (function() {
                         bot.foodTimer, 1000 / bot.opt.targetFps * bot.opt.foodFrames);
                 }
                 window.setAcceleration(bot.foodAccel());
+                //for imitation learning
+                bot.currentBotAcceleration = bot.foodAccel();
             }
         },
 
@@ -942,6 +956,8 @@ var bot = window.bot = (function() {
             bot.updateLabelMap();
             var time = new Date();      //TODO: for debug
             var features = {
+                currentBotDirection: bot.currentBotDirection,
+                currentBotAcceleration: bot.currentBotAcceleration,
                 observation: bot.label_map,
                 score: bot.getMyScore(),
                 is_dead: window.snake == null,

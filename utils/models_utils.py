@@ -75,8 +75,13 @@ def get_default_data():
         'observation': [0 for i in range(INNER_INPUT_SIZE)],
         'score': 0,
         'is_dead': False,
-        'message_id': -1
-    }
+        'message_id': -1,
+        'currentBotDirection': 0,
+        'currentBotAcceleration': 0,
+        'hours': 0,
+        'minutes': 0,
+        'seconds': 0
+        }
 
 #TODO: in case of failure send boolean
 def send_action(index, request_id):
