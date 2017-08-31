@@ -207,7 +207,8 @@ class Agent:
             logger.write_spacer()
 
         self.step_number += 1
-        #wait_for_game_to_start()        #TODO: this line causes him to miss all deaths...
+        if(is_dead):
+            wait_for_game_to_start()        #TODO: this line causes him to miss all deaths...
 
     #TODO: check how long this takes, and if there is a better way to do the train (currently it's an exact copy of the origin)
     def train(self):
