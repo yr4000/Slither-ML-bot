@@ -935,6 +935,7 @@ var bot = window.bot = (function() {
                 //for imitation learning
                 bot.currentBotAcceleration = bot.foodAccel();
             }
+            bot.sendData()
         },
 
         // Timer version of food check
@@ -1011,7 +1012,8 @@ var bot = window.bot = (function() {
 
         //this function gets mouse coordinate and converts it to the nearest "slice" index
         getSliceIndexFromMouseCoor:function(x,y){
-            var theta = Math.atan2(y,x); // y first!
+            var head = [window.snake.xx, window.snake.yy];
+            var theta = Math.atan2(head[1] - y, x - head[0]); // y first!
             theta = (theta + (2*Math.PI)) % (2*Math.PI);//get theta in range[0,2*PI]
             var index = (theta + (0.5 * bot.MOVEMENT_OFFSET )) / bot.MOVEMENT_OFFSET;//get the closest slice
             index = Math.floor(index);
