@@ -26,8 +26,11 @@ NUM_OF_EPOCHS = DQN_params['NUM_OF_EPOCHS']
 NUM_OF_GAMES_FOR_TEST = DQN_params['NUM_OF_GAMES_FOR_TEST']
 
 # Load and save constants
-WEIGHTS_FILE = DQN_params['WEIGHTS_FILE']
-LOAD_WEIGHTS = DQN_params['LOAD_WEIGHTS']
+WEIGHTS_FILE = DQN_params['WEIGHTS_DIR'] + DQN_params['WEIGHTS_FILE']
+BEST_WEIGHTS = DQN_params['WEIGHTS_DIR'] + DQN_params['BEST_WEIGHTS']
+DO_LOAD_WEIGHTS = DQN_params['DO_LOAD_WEIGHTS']
+WEIGHTS_DIR = DQN_params['WEIGHTS_DIR']
+WEIGHTS_TO_LOAD = DQN_params['WEIGHTS_TO_LOAD']
 
 #game constants:
 BEGINING_SCORE = 10
@@ -98,9 +101,13 @@ class Agent:
         self.step_number = 0
         self.epoch_no = 0
 
+        #create folder for weights:
+        if (not os.path.exists(WEIGHTS_DIR)):
+            os.makedirs(WEIGHTS_DIR)
+
         # check if file is not empty
-        if (os.path.isfile(WEIGHTS_FILE) and LOAD_WEIGHTS):
-            self.load_weights()
+        if (os.path.isfile(WEIGHTS_FILE) and DO_LOAD_WEIGHTS):
+            self.load_weights(WEIGHTS_TO_LOAD)
 
         # creates file if it doesn't exisits:
         if (not os.path.isfile(WEIGHTS_FILE)):
@@ -139,6 +146,19 @@ class Agent:
     def take_one_step(self):
         #This part of the code processes the data
         frame, score, is_dead, request_id, default_obsrv = get_observation()  # get observation
+
+        #handaling edge cases:
+        #connection problems:
+        if(score == 0):
+            score = self.last_raw_scores[-1]
+        #if from some reason the frame we observed is wrong
+        if(len(frame) != CNN_params['INPUT_DIM']):
+            print("Warning: current frame doesn't have the right dim! skipping this step.")
+            print("frame: " + str(frame))
+            logger.write_to_log("Warning: current frame doesn't have the right dim! skipping this step.")
+            logger.write_to_log("frame: " + str(frame))
+            return
+
         #if the game began we stack the same frame FRAMES_PER_OBSERVATION times
         if self.last_state is None:
             self.last_state = np.stack(tuple(frame for i in range(self.FRAMES_PER_OBSERVATION)))
@@ -150,6 +170,8 @@ class Agent:
         self.last_raw_scores.append(score)
         if(len(self.last_raw_scores) > self.LAST_RAW_SCORES_SIZE):
             self.last_raw_scores.popleft()
+
+        #write to log and evaluate
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_to_log("Last raw scores: " + str(self.last_raw_scores))
             print("Avarage raw score for epoch %d step %d: %0.2f" % (self.epoch_no,self.step_number,np.average(self.last_raw_scores)))
@@ -177,14 +199,15 @@ class Agent:
             self.last_raw_scores.clear()
             self.last_raw_scores.append(BEGINING_SCORE)
 
-        time.sleep(0.05)            #TODO: is this necessary?
-        #TODO: make sure
+        #update last state seen
         self.last_state = current_state
+
+        #write to logger
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_spacer()
 
         self.step_number += 1
-        wait_for_game_to_start()
+        #wait_for_game_to_start()        #TODO: this line causes him to miss all deaths...
 
     #TODO: check how long this takes, and if there is a better way to do the train (currently it's an exact copy of the origin)
     def train(self):
@@ -219,7 +242,6 @@ class Agent:
         #print("the training took {} time to run".format(time.time() - start_time))
 
 
-
     def get_reward(self, raw_scores,is_dead):
         death_punishment = -10 #TODO : i think -100 is way too high because we do not normalize rewards
         no_gain_punishment = -0.05
@@ -232,14 +254,16 @@ class Agent:
         return reward
 
 
-    def load_weights(self):
-        with open(WEIGHTS_FILE, 'rb') as f:  # BEST_WEIGHTS
+    def load_weights(self,file_name):
+        with open(file_name, 'rb') as f:  # BEST_WEIGHTS
             for var, val in zip(self.tvars, pkl.load(f)):
                 self.sess.run(tf.assign(var, val))
+        print("successfully loaded " + file_name)
 
-    def save_weights(self):
-        with open(WEIGHTS_FILE, 'wb') as f:
+    def save_weights(self,file_name):
+        with open(file_name, 'wb') as f:
             pkl.dump(self.sess.run(self.tvars), f, protocol=2)
+        print("successfully saved " + file_name)
 
     def evaluate(self):
         print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
@@ -273,22 +297,42 @@ class Agent:
 
 if __name__ == '__main__':
     #initialize agent
-    avg_scores_per_game = []
+    avg_scores_per_step = []
+    avg_scores_per_epoch = []
+    best_avg_per_step = 0
     agent = Agent()
     #test first time with random weights for baseline
-    print("evaluationg random movements")
-    avg_scores_per_game.append(agent.evaluate())
+    #print("evaluationg random movements")
+    #avg_scores_per_game.append(agent.evaluate())
     #the division of steps to epochs is for evaluation
+    print("experiment started!")
     while(agent.epoch_no < NUM_OF_EPOCHS):
-        print("experiment started!")
+        #nulify relevant properties
         agent.step_number = 0
+        avg_scores_per_step = []
         #loop over k steps
         while agent.step_number < MAX_STEPS:
             agent.take_one_step()
-        avg_scores_per_game.append(agent.evaluate())
-        logger.write_to_log("avg_scores_per_game" + str(avg_scores_per_game))
+            #write to log and add to plot array:
+            if (agent.step_number % agent.WRITE_TO_LOG_EVERY == 0):
+                avg_scores_per_step.append(np.average(agent.last_raw_scores))
+                logger.write_to_log("avg_scores_per_step" + str(avg_scores_per_step))
+        #avg_scores_per_game.append(agent.evaluate())
+
+        #save weights and best weights:
+        #TODO: last loaded weights will be override on the first save
+        #TODO: posible solution: change file names, save best score in parameters...
+        agent.save_weights(WEIGHTS_FILE)
+        if(avg_scores_per_step[-1] > best_avg_per_step):
+            best_avg_per_step = avg_scores_per_step[-1]
+            agent.save_weights(BEST_WEIGHTS)
+
+        #evaluation and plotting
+        plot_graph(avg_scores_per_step ,"avg_score_per_100_steps" ,"DQN_avg_score_per_step_by_epoch_"+str(agent.epoch_no))
+        avg_scores_per_epoch.append(np.average(avg_scores_per_step))
+        logger.write_to_log("avg_scores_per_epoch" + str(avg_scores_per_epoch))
+        logger.write_spacer()
         agent.epoch_no += 1
 
-        plot_graph(avg_scores_per_game ,"avg_score_per_epoch" ,"DQN_avg_score_by_epoch" )
-
+    plot_graph(avg_scores_per_epoch,"Average Score Per Epoch", "DQN_avg_score_per_epoch_for_experiment")
     print("finished experiement")
