@@ -329,6 +329,10 @@ if __name__ == '__main__':
             if (agent.step_number % agent.WRITE_TO_LOG_EVERY == 0):
                 avg_scores_per_step.append(np.average(agent.last_raw_scores))
                 logger.write_to_log("avg_scores_per_step" + str(avg_scores_per_step))
+
+            #TODO: is that sleep necessary??
+            if(agent.LEARN_FROM_EXPERT and agent.epoch_no == 0):
+                time.sleep(0.05)        #when learn from expert it runs really reallt fast at the first epoch
         #avg_scores_per_game.append(agent.evaluate())
 
         #save weights and best weights:
