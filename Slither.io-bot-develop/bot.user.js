@@ -394,6 +394,7 @@ var bot = window.bot = (function() {
         MAP_R: 0,
 
         //This is for ML mode
+        NUMBER_OF_SLICES : 32 ,
         MOVEMENT_OFFSET: Math.PI/16,    //NOTE: the larger the slices the smaller the circle will (because of the comunication speed)
         MOVEMENT_R: 100,
         SEND_C: 0,          //send counter
@@ -996,9 +997,10 @@ var bot = window.bot = (function() {
         getSliceIndexFromMouseCoor:function(x,y){
             var theta = Math.atan2(y,x); // y first!
             theta = (theta + (2*Math.PI)) % (2*Math.PI);//get theta in range[0,2*PI]
-            //TODO: convert theta to our coordinates
             var index = (theta + (0.5 * bot.MOVEMENT_OFFSET )) / bot.MOVEMENT_OFFSET;//get the closest slice
             index = Math.floor(index);
+            //to account for the opposit directions and bias of atan2 and our mapping
+            index = (bot.NUMBER_OF_SLICES + ((bot.NUMBER_OF_SLICES/4) - index)) %bot.NUMBER_OF_SLICES
             return index;
         },
 
