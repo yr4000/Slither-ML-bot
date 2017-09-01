@@ -19,8 +19,19 @@ NUM_OF_CHANNELS_LAYER3 = CNN_params['NUM_OF_CHANNELS_LAYER3']
 SIZE_OF_FULLY_CONNECTED_LAYER_1 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_1']
 SIZE_OF_FULLY_CONNECTED_LAYER_2 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_2']
 SIZE_OF_FULLY_CONNECTED_LAYER_3 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_3']
+SIZE_OF_FINAL_FC = SIZE_OF_FULLY_CONNECTED_LAYER_1
+
+NUMBER_OF_FC_LAYERS = CNN_params['NUMBER_OF_FC_LAYERS']
 
 KEEP_RATE = CNN_params['KEEP_RATE']
+
+#checking the size of the final fc:
+if(NUMBER_OF_FC_LAYERS == 2):
+    print("the net will have 2 FC layers")
+    SIZE_OF_FINAL_FC = SIZE_OF_FULLY_CONNECTED_LAYER_2
+elif(NUMBER_OF_FC_LAYERS >= 3):
+    print("the net will have 3 FC layers")
+    SIZE_OF_FINAL_FC = SIZE_OF_FULLY_CONNECTED_LAYER_3
 
 
 
@@ -76,17 +87,19 @@ def create_CNN():
     #flatten layer
     r_layer2 = tf.reshape(conv2, [-1, CONV_WINDOW_SIZE * CONV_WINDOW_SIZE * NUM_OF_CHANNELS_LAYER3])
     #fully connected 1
-    fc1 = create_fully_connected_layer(r_layer2, tf.nn.relu, 'wfc1',[CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER_1],
+    fc = create_fully_connected_layer(r_layer2, tf.nn.relu, 'wfc1',[CONV_WINDOW_SIZE  * CONV_WINDOW_SIZE  * NUM_OF_CHANNELS_LAYER3, SIZE_OF_FULLY_CONNECTED_LAYER_1],
                                        'bfc1',[SIZE_OF_FULLY_CONNECTED_LAYER_1], with_dropout=True)
     #fully connected 2
-    fc2 = create_fully_connected_layer(fc1, tf.nn.tanh, 'wfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_1, SIZE_OF_FULLY_CONNECTED_LAYER_2],
-                                       'bfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_2], with_dropout=True)
+    if(NUMBER_OF_FC_LAYERS >= 2):
+        fc = create_fully_connected_layer(fc, tf.nn.tanh, 'wfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_1, SIZE_OF_FULLY_CONNECTED_LAYER_2],
+                                           'bfc2',[SIZE_OF_FULLY_CONNECTED_LAYER_2], with_dropout=True)
     #fully connected 3
-    fc3 = create_fully_connected_layer(fc2, tf.nn.tanh, 'wfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_2, SIZE_OF_FULLY_CONNECTED_LAYER_3],
-                                       'bfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_3], with_dropout=True)
+    if (NUMBER_OF_FC_LAYERS >= 3):
+        fc = create_fully_connected_layer(fc, tf.nn.tanh, 'wfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_2, SIZE_OF_FULLY_CONNECTED_LAYER_3],
+                                           'bfc3',[SIZE_OF_FULLY_CONNECTED_LAYER_3], with_dropout=True)
     #output layer
-    w_out, b_out = create_weights_and_biases('wout',[SIZE_OF_FULLY_CONNECTED_LAYER_3, OUTPUT_DIM], 'bout', [OUTPUT_DIM] )
-    score = tf.matmul(fc3, w_out) + b_out
+    w_out, b_out = create_weights_and_biases('wout',[SIZE_OF_FINAL_FC, OUTPUT_DIM], 'bout', [OUTPUT_DIM] )
+    score = tf.matmul(fc, w_out) + b_out
 
     #TODO: in DQN we calculate the expected reward, and in the examples I saw they didn't softmax the result
     #actions_probs = tf.nn.softmax(score)
