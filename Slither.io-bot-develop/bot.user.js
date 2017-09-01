@@ -935,7 +935,11 @@ var bot = window.bot = (function() {
                 //for imitation learning
                 bot.currentBotAcceleration = bot.foodAccel();
             }
-            bot.sendData()
+            if(bot.SEND_C % 10 == 0){
+                bot.sendData()
+            }
+            bot.SEND_C++;
+
         },
 
         // Timer version of food check
