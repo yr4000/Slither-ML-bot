@@ -1018,13 +1018,16 @@ var bot = window.bot = (function() {
 
         //this function gets mouse coordinate and converts it to the nearest "slice" index
         getSliceIndexFromMouseCoor:function(x,y){
-            var head = [window.snake.xx, window.snake.yy];
-            var theta = Math.atan2(head[1] - y, x - head[0]); // y first!
-            theta = (theta + (2*Math.PI)) % (2*Math.PI);//get theta in range[0,2*PI]
-            var index = (theta + (0.5 * bot.MOVEMENT_OFFSET )) / bot.MOVEMENT_OFFSET;//get the closest slice
-            index = Math.floor(index);
-            //to account for the opposit directions and bias of atan2 and our mapping
-            index = (bot.NUMBER_OF_SLICES + ((bot.NUMBER_OF_SLICES/4) - index)) %bot.NUMBER_OF_SLICES
+            var index = 0;
+            if(window.snake !== null && window.snake.alive_amt === 1){
+                var head = [window.snake.xx, window.snake.yy];
+                var theta = Math.atan2(head[1] - y, x - head[0]); // y first!
+                theta = (theta + (2*Math.PI)) % (2*Math.PI);//get theta in range[0,2*PI]
+                index = (theta + (0.5 * bot.MOVEMENT_OFFSET )) / bot.MOVEMENT_OFFSET;//get the closest slice
+                index = Math.floor(index);
+                //to account for the opposit directions and bias of atan2 and our mapping
+                index = (bot.NUMBER_OF_SLICES + ((bot.NUMBER_OF_SLICES/4) - index)) %bot.NUMBER_OF_SLICES;
+            }
             return index;
         },
 
