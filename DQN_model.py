@@ -65,6 +65,8 @@ class Agent:
     # do write to log?
     WRITE_TO_LOG_EVERY = DQN_params['WRITE_TO_LOG_EVERY']
 
+    #test or train mode
+    TEST_MODE = DQN_params['TEST_MODE']
     #do learn from expert?
     LEARN_FROM_EXPERT = DQN_params['LEARN_FROM_EXPERT']
     if(LEARN_FROM_EXPERT):
@@ -131,7 +133,7 @@ class Agent:
         #select an action according to the Q function with epsilon greedy
         new_action = np.zeros([OUTPUT_DIM])
 
-        if (random.random() <= self.probability_of_random_action):
+        if (random.random() <= self.probability_of_random_action)and (not self.TEST_MODE):
             # choose an action randomly
             action_index = random.randrange(OUTPUT_DIM)
         else:
@@ -185,7 +187,6 @@ class Agent:
         #getting reward:
         reward = self.get_reward(self.last_raw_scores,is_dead)
 
-        #take an action:
         if(self.LEARN_FROM_EXPERT):
             new_action = np.zeros([OUTPUT_DIM])
             action_index = AI_action + AI_accel*DQN_params['SLICES_NO']
@@ -195,15 +196,17 @@ class Agent:
         else:
             self.take_action(request_id)
 
-        #adding observarion to memory:
-        #TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
-        self.memory.append((self.last_state, self.last_action, reward, current_state, is_dead))
-        #pop out memory:
-        if(len(self.memory) > self.MEMORY_SIZE):
-            self.memory.popleft()
-        #if enough steps passed - train:
-        if(len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING):
-            self.train()
+        #do not train when testing the model
+        if(not self.TEST_MODE):
+            #adding observarion to memory:
+            #TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
+            self.memory.append((self.last_state, self.last_action, reward, current_state, is_dead))
+            #pop out memory:
+            if(len(self.memory) > self.MEMORY_SIZE):
+                self.memory.popleft()
+            #if enough steps passed - train:
+            if(len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING):
+                self.train()
 
         #if the bot died restart the observation and raw_score_counting
         if(is_dead):
@@ -220,6 +223,7 @@ class Agent:
             logger.write_spacer()
 
         self.step_number += 1
+
         if(is_dead):
             wait_for_game_to_start()        #TODO: this line causes him to miss all deaths...
 
@@ -309,7 +313,6 @@ class Agent:
         print("finished evaluation.")
         return(np.average(scores))
 
-
 if __name__ == '__main__':
     #initialize agent
     avg_scores_per_step = []
@@ -321,6 +324,7 @@ if __name__ == '__main__':
     #avg_scores_per_game.append(agent.evaluate())
     #the division of steps to epochs is for evaluation
     print("experiment started!")
+
     while(agent.epoch_no < NUM_OF_EPOCHS):
         #nulify relevant properties
         agent.step_number = 0
@@ -339,12 +343,13 @@ if __name__ == '__main__':
         #avg_scores_per_game.append(agent.evaluate())
 
         #save weights and best weights:
-        #TODO: last loaded weights will be override on the first save
+        #TODO: last loaded weights will be overrizde on the first save
         #TODO: posible solution: change file names, save best score in parameters...
-        agent.save_weights(WEIGHTS_FILE)
-        if(avg_scores_per_step[-1] > best_avg_per_step):
-            best_avg_per_step = avg_scores_per_step[-1]
-            agent.save_weights(BEST_WEIGHTS)
+        if(not agent.TEST_MODE):
+            agent.save_weights(WEIGHTS_FILE)
+            if(avg_scores_per_step[-1] > best_avg_per_step):
+                best_avg_per_step = avg_scores_per_step[-1]
+                agent.save_weights(BEST_WEIGHTS)
 
         #evaluation and plotting
         plot_graph(avg_scores_per_step ,"avg_score_per_100_steps" ,"DQN_avg_score_per_step_by_epoch_"+str(agent.epoch_no))
