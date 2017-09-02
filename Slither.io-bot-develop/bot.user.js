@@ -20,18 +20,18 @@ Uncomment variables you wish to change from their default values
 Changes you make here will be kept between script versions
 */
 
-//adding JQuery to script
-var script = document.createElement('script');
-script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js';
-script.type = 'text/javascript';
-document.getElementsByTagName('head')[0].appendChild(script);
+var libraries = [];
+libraries.push('https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js');     //JQuery
+libraries.push('http://cs.stanford.edu/people/karpathy/convnetjs/build/convnet-min.js');    //convNetJS
+libraries.push('http://cs.stanford.edu/people/karpathy/convnetjs/build/deepqlearn.js');     //DQN library
+libraries.push('http://cs.stanford.edu/people/karpathy/convnetjs/build/util.js');       // util for DQN
 
-//adding ConvNetJS to script
-var convNetScript = document.createElement('script');
-convNetScript.src = 'http://cs.stanford.edu/people/karpathy/convnetjs/build/convnet-min.js';
-convNetScript.type = 'text/javascript';
-document.getElementsByTagName('head')[0].appendChild(convNetScript);
-
+for(var i=0; i<libraries.length; i++){
+    var script = document.createElement('script');
+    script.src = libraries[i];
+    script.type = 'text/javascript';
+    document.getElementsByTagName('head')[0].appendChild(script);
+}
 
 var customBotOptions = {
     // target fps
@@ -417,14 +417,21 @@ var bot = window.bot = (function() {
         smallFoodLabel: 100,
         mediumFoodLabel: 150,
         largeFoodLabel: 200,
-        //TODO: new property
-        currentBotDirection: 0,
-        currentBotAcceleration: 0,
 
         //TODO: ML debug vriables
         message_id: 1,
+        direction: {x: 0 , y: -100},    //determains the direction of the ML_bot
 
-        direction: {x: 0 , y: -100},    //determains the direction of the bot
+        //Imatation learning variables
+        currentBotDirection: 0,         //recording the action chosen by AL bot translated to direction
+        currentBotAcceleration: 0,      //recording if AI bot chose to accelerate or not
+
+        //JS RL learning variabls
+        isJSMLInitialized: false,
+        convNet: NaN,
+        brain: NaN,
+        trainingSteps: 500000,
+        counterSteps: 0,
 
         getSnakeWidth: function(sc) {
             if (sc === undefined) sc = window.snake.sc;
@@ -1303,9 +1310,10 @@ var bot = window.bot = (function() {
         },
         
         createConvNet: function () {
+            var num_actions = bot.NUMBER_OF_SLICES*2;
             var layer_defs = [];
             //input: label map, four frames
-            layer_defs.push({type:'input', out_sx: bot.mapSize, out_sy: bot.mapSize, out_depth:4});
+            layer_defs.push({type:'input', out_sx: bot.mapSize, out_sy: bot.mapSize, out_depth:1});
             //conv_layer_1 + polling
             layer_defs.push({type:'conv', sx:6, filters:16, stride:1, pad:2, activation:'relu'});
             layer_defs.push({type:'pool', sx:2, stride:2});
@@ -1314,9 +1322,53 @@ var bot = window.bot = (function() {
             layer_defs.push({type:'pool', sx:2, stride:2});
             //fully connected layers:
             layer_defs.push({type:'fc', num_neurons: 256, activation:'relu'});
-            var net = new convnetjs.Net();
-            net.makeLayers(layer_defs);
-            return net;
+            layer_defs.push({type:'regression', num_neurons:num_actions});
+            //var net = new convnetjs.Net;
+            //net.makeLayers(layer_defs);
+            return layer_defs;
+        },
+
+        //Returns the RL brain. most of this code is taken from this tutorial: http://cs.stanford.edu/people/karpathy/convnetjs/demo/rldemo.html
+        createRLBrain: function () {
+            var num_inputs = bot.mapSize**2;
+            var num_actions = bot.NUMBER_OF_SLICES*2; // number of possible directions with or withour acceleration
+            var temporal_window = 0; // amount of temporal memory. 0 = agent lives in-the-moment :)
+            var network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
+
+            // options for the Temporal Difference learner that trains the above net
+            // by backpropping the temporal difference learning rule.
+            var tdtrainer_options = {learning_rate:0.001, momentum:0.0, batch_size:64, l2_decay:0.01};
+
+            var opt = {};
+            opt.temporal_window = temporal_window;
+            opt.experience_size = 100000;
+            opt.start_learn_threshold = 10000;
+            opt.gamma = 0.9;
+            opt.learning_steps_total = bot.trainingSteps;
+            opt.learning_steps_burnin = 3000;
+            opt.epsilon_min = 0.05;
+            opt.epsilon_test_time = 0.05;
+            opt.layer_defs = bot.convNet;
+            opt.tdtrainer_options = tdtrainer_options;
+
+            var brain = new deepqlearn.Brain(num_inputs, num_actions, opt);
+            return brain;
+        },
+
+        //source: https://stackoverflow.com/questions/4492385/how-to-convert-simple-array-into-two-dimensional-arraymatrix-in-javascript-or
+        listToMatrix: function(list, elementsPerSubArray){
+            var matrix = [], i, k;
+
+            for (i = 0, k = -1; i < list.length; i++) {
+                if (i % elementsPerSubArray === 0) {
+                    k++;
+                    matrix[k] = [];
+                }
+
+                matrix[k].push(list[i]);
+            }
+
+            return matrix;
         }
 
 
@@ -1765,8 +1817,25 @@ var userInterface = window.userInterface = (function() {
                     }
                     bot.SEND_C++;
                 }
-                if(bot.ML_mode == 3){
-
+                else if(bot.ML_mode == 3){
+                    bot.everyML();
+                    if(!bot.isJSMLInitialized){
+                        //initialise bot JS ML variables:
+                        bot.convNet = bot.createConvNet();
+                        bot.brain = bot.createRLBrain();
+                        bot.isJSMLInitialized = true;
+                    }
+                    var action = bot.brain.forward(bot.listToMatrix(bot.label_map, bot.mapSize));
+                    bot.setDirection(action%bot.NUMBER_OF_SLICES);
+                    window.setAcceleration(Math.floor(action/bot.NUMBER_OF_SLICES));
+                    if(bot.counterSteps < bot.trainingSteps){
+                        bot.brain.backward([bot.getMyScore()]);
+                        bot.counterSteps++;
+                    }
+                    else if(bot.counterSteps == bot.trainingSteps){
+                        bot.brain.epsilon_test_time = 0.0;
+                        bot.brain.learning = false;
+                    }
                 }
                 else{
                     bot.go();
@@ -1934,6 +2003,7 @@ var userInterface = window.userInterface = (function() {
     //initialzie lable map for ML mode.
     bot.restartLabelMap(bot.mapSize);
     bot.direction = {x:0, y:-100};  //TODO:this initialization should be (also) in another place
+
     // Start!
     userInterface.oefTimer();
 })();
