@@ -23,13 +23,6 @@ def ask_model():
 
     with open('observation.json', 'w') as outfile:
         json.dump(data, outfile)
-    #print("data: " + str(data) + '\n')
-    #print("Score: " + str(data['score']) + '\n')
-    #print("Foods: "+str(data['foods']) + '\n')
-    #print("Preys: " + str(data['preys']) + '\n')
-    #print("Snake: "+ str(data['snake']) + '\n')
-    #print("input: " + str(data['input']) + '\n')
-
 
     # TODO: add sleep? not a good idea since there si already a lag
     #t.sleep(0.05)
@@ -44,15 +37,6 @@ def ask_model():
                'do_accelerate': 0,
                'request_id': -1,
                'commit_sucide': False}        #TODO: change to a better default
-
-    # calculate angle using r and x
-
-    '''
-    teta = math.acos(data['x'] / data['r'])
-    teta += math.pi / 18
-    res['x'] = data['r']*math.cos(teta)
-    res['y'] = data['r']*math.sin(teta)
-    '''
 
     #print(res)
     time = datetime.now().time()
