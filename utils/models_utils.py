@@ -9,6 +9,13 @@ import json
 import time
 from datetime import datetime
 
+#when doing unit test parameter loading fails
+'''
+SLICES_NO = 32
+FRAMES_PER_OBSERVATION = 4
+OUTPUT_DIM = 64
+INNER_INPUT_SIZE = 9
+'''
 #load parameters:
 with open('parameters/Policy_Gradient_Params.json') as json_data:
     PG_params = json.load(json_data)
@@ -16,9 +23,21 @@ with open('parameters/Policy_Gradient_Params.json') as json_data:
 with open('parameters/DQN_Params.json') as json_data:
     DQN_params = json.load(json_data)
 
+
 DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = PG_params['SLICES_NO']
+OUTPUT_DIM = PG_params['OUTPUT_DIM']
 INNER_INPUT_SIZE = PG_params['INPUT_DIM']
+SQRT_INPUT_DIM = int(INNER_INPUT_SIZE**0.5)
+
+FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']
+
+def make_one_hot(index, do_accel):
+    new_action = np.zeros([OUTPUT_DIM]).astype(int)
+    action_index = index + do_accel *SLICES_NO
+    new_action[action_index] = 1
+    return new_action
+
 
 #TODO: is it fine that this function is here?
 #TODO: fix according to Carmels version
@@ -192,3 +211,75 @@ def wait_if_connection_lost(observations):
 
             print("I think the connection was lost...")
             wait_for_game_to_start()
+
+def generate_alternate_states(state,number_of_frames):
+    #turn frames from vectors to matrices
+    state_as_matrices = \
+        [np.array(frame).reshape(SQRT_INPUT_DIM, SQRT_INPUT_DIM) for frame in state]
+    #generate alternate states
+    state_list = []
+    for i in range(number_of_frames):
+        frame_list = []
+        curr_frame = state_as_matrices[i]
+
+        frame_list.append(curr_frame)
+        frame_list.append(np.rot90(curr_frame))
+        frame_list.append(np.rot90(curr_frame, 2))
+        frame_list.append(np.rot90(curr_frame, 3))
+        frame_list.append(np.flip(curr_frame, 0))
+        frame_list.append(np.flip(curr_frame, 1))
+        frame_list.append(curr_frame.transpose())
+        frame_list.append(np.flip(np.flip(curr_frame, 0), 1).transpose())
+
+        #turn alternate frames from matrices to vectors
+        state_list.append([f.reshape([-1]) for f in frame_list])
+
+    state_list = list(zip(*state_list))
+    state_list = [list(t)for t in state_list]
+    return state_list
+
+def generate_alternate_actions(action_index):
+    action_list = []
+    action_list.append(action_index)
+    action_list.append((action_index - SLICES_NO/4) %SLICES_NO)
+    action_list.append((action_index - 2*SLICES_NO/4) %SLICES_NO)
+    action_list.append((action_index - 3*SLICES_NO/4) %SLICES_NO)
+    action_list.append((2*SLICES_NO/4 - action_index) %SLICES_NO)
+    action_list.append((0*SLICES_NO/4 - action_index) %SLICES_NO)
+    action_list.append((3*SLICES_NO/4 - action_index) % SLICES_NO)
+    action_list.append((SLICES_NO/4 - action_index) % SLICES_NO)
+    return action_list
+
+def make_invariant_to_orientation(prev_state, action, curr_frame):
+    #generate all alternate orientation states
+    St = generate_alternate_states(prev_state,FRAMES_PER_OBSERVATION)
+    Ft = generate_alternate_states([curr_frame],1)
+    # generte St+1 from St and Ft
+    St_1 = [St[i][1:]+Ft[i] for i in range (len(St))]
+
+    #generate alternate actions
+    action_index = np.argmax(action) % SLICES_NO
+    do_accel = int(np.argmax(action) >= SLICES_NO)
+
+    At = [make_one_hot(int(action_i),do_accel)
+                   for action_i in generate_alternate_actions(action_index)]
+
+    #zip together
+    SAS_list = list(zip(St,At,St_1))
+    return(SAS_list)
+
+'''
+if __name__ == "__main__":
+    s_0 = [list(range(9)) for i in range(FRAMES_PER_OBSERVATION)]
+    a = make_one_hot(3,1)
+    f = list(range(9,18))
+    SAS = make_invariant_to_orientation(s_0,a,f)
+    for sas in SAS:
+        print("new operation")
+        print("s_0 is:")
+        print(sas[0])
+        print("a is:")
+        print(sas[1])
+        print("s_1 is:")
+        print(sas[2])
+'''

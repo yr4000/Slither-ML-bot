@@ -2,6 +2,8 @@
 This code is based on the following guide (for DQN for pong) and it's code:
 http://www.danielslater.net/2016/03/deep-q-learning-pong-with-tensorflow.html
 '''
+from _lsprof import profiler_entry
+
 from utils.plot_utils import plot_graph
 from utils.net_utils import *
 from utils.models_utils import *
@@ -188,22 +190,24 @@ class Agent:
         reward = self.get_reward(self.last_raw_scores,is_dead)
 
         if(self.LEARN_FROM_EXPERT):
-            new_action = np.zeros([OUTPUT_DIM])
-            action_index = AI_action + AI_accel*DQN_params['SLICES_NO']
-            new_action[action_index] = 1
-            self.last_action = new_action
+            self.last_action = make_one_hot(AI_action, AI_accel)
 
         else:
             self.take_action(request_id)
 
         #do not train when testing the model
         if(not self.TEST_MODE):
-            #adding observarion to memory:
-            #TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
-            self.memory.append((self.last_state, self.last_action, reward, current_state, is_dead))
-            #pop out memory:
-            if(len(self.memory) > self.MEMORY_SIZE):
-                self.memory.popleft()
+            #make St,At,St+1 invariant to oreintation
+            SAS_list = \
+                make_invariant_to_orientation(self.last_state , self.last_action , current_state[-1])
+
+            # adding observations to memory:
+            for sas in SAS_list:
+                #TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
+                self.memory.append((sas[0], sas[1], reward, sas[2], is_dead))
+                #pop out memory:
+                if(len(self.memory) > self.MEMORY_SIZE):
+                    self.memory.popleft()
             #if enough steps passed - train:
             if(len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING):
                 self.train()
