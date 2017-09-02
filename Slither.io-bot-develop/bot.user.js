@@ -20,14 +20,18 @@ Uncomment variables you wish to change from their default values
 Changes you make here will be kept between script versions
 */
 
+//adding JQuery to script
 var script = document.createElement('script');
 script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js';
 script.type = 'text/javascript';
 document.getElementsByTagName('head')[0].appendChild(script);
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+//adding ConvNetJS to script
+var convNetScript = document.createElement('script');
+convNetScript.src = 'http://cs.stanford.edu/people/karpathy/convnetjs/build/convnet-min.js';
+convNetScript.type = 'text/javascript';
+document.getElementsByTagName('head')[0].appendChild(convNetScript);
+
 
 var customBotOptions = {
     // target fps
@@ -400,10 +404,10 @@ var bot = window.bot = (function() {
         MOVEMENT_OFFSET: Math.PI/16,    //NOTE: the larger the slices the smaller the circle will (because of the comunication speed)
         MOVEMENT_R: 100,
         SEND_C: 0,          //send counter
-        ML_mode: true,
+        ML_mode: 0,
         //TODO: play with the offset, consider create width and length offsets
         offsetSize: 35,    //the size of each pixel in label_map is offsetSize^2
-        mapSize: 20,        //The label_map size is mapSize^2
+        mapSize: 24,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
         smallAmountOfFood: 10,
         mediumAmountOfFood: 30,
@@ -935,11 +939,12 @@ var bot = window.bot = (function() {
                 //for imitation learning
                 bot.currentBotAcceleration = bot.foodAccel();
             }
-            if(bot.SEND_C % 10 == 0){
-                bot.sendData()
+            if(bot.ML_mode == 2){
+                if(bot.SEND_C % 10 == 0){
+                    bot.sendData()
+                }
+                bot.SEND_C++;
             }
-            bot.SEND_C++;
-
         },
 
         // Timer version of food check
@@ -966,6 +971,7 @@ var bot = window.bot = (function() {
                 observation: bot.label_map,
                 score: bot.getMyScore(),
                 is_dead: window.snake == null,
+                //this data is used for debugging the client-server connection
                 message_id: bot.message_id,
                 hours: time.getHours(),
                 minutes: time.getMinutes(),
@@ -973,9 +979,6 @@ var bot = window.bot = (function() {
                 /*
                 //preys: window.preys,
                 */
-                x: bot.direction.x,
-                y: bot.direction.y,
-                r: 100
             };
             bot.message_id++;
             $.ajax({
@@ -983,7 +986,8 @@ var bot = window.bot = (function() {
                     url:     'http://localhost:5000/model',
                     data:    JSON.stringify(features),
                     success: function(data) {
-                        if(bot.ML_mode){
+                        //success will only be activated if we are in ML server mode
+                        if(bot.ML_mode == 1){
                             if(data.commit_sucide){
                                 userInterface.quit();
                                 for(var i = 0; i < 25; i++){
@@ -1014,6 +1018,10 @@ var bot = window.bot = (function() {
             bot.MAP_R = window.grd * 0.98;
             bot.MID_X = window.grd;
             bot.MID_Y = window.grd;
+            bot.updateLabelMap();
+            if(window.visualDebugging){
+                bot.drawNet();
+            }
         },
 
         //this function gets mouse coordinate and converts it to the nearest "slice" index
@@ -1292,6 +1300,23 @@ var bot = window.bot = (function() {
                 x: head[0] + (index%n - n/2)*bot.offsetSize,
                 y: head[1] + (n/2 - Math.floor(index/n))*bot.offsetSize
             }
+        },
+        
+        createConvNet: function () {
+            var layer_defs = [];
+            //input: label map, four frames
+            layer_defs.push({type:'input', out_sx: bot.mapSize, out_sy: bot.mapSize, out_depth:4});
+            //conv_layer_1 + polling
+            layer_defs.push({type:'conv', sx:6, filters:16, stride:1, pad:2, activation:'relu'});
+            layer_defs.push({type:'pool', sx:2, stride:2});
+            //conv_layer_2 + polling
+            layer_defs.push({type:'conv', sx:6, filters:32, stride:1, pad:2, activation:'relu'});
+            layer_defs.push({type:'pool', sx:2, stride:2});
+            //fully connected layers:
+            layer_defs.push({type:'fc', num_neurons: 256, activation:'relu'});
+            var net = new convnetjs.Net();
+            net.makeLayers(layer_defs);
+            return net;
         }
 
 
@@ -1518,7 +1543,7 @@ var userInterface = window.userInterface = (function() {
 
                 // Letter 'M' to toggle Machine learning modes
                 if (e.keyCode === 77) {
-                    bot.ML_mode = !bot.ML_mode;
+                    bot.ML_mode = (bot.ML_mode + 1)%4;
                     window.log('Machine learning mode set to: ' + bot.ML_mode);
                     userInterface.savePreference('MachineLearning', bot.ML_mode);
                 }
@@ -1661,7 +1686,7 @@ var userInterface = window.userInterface = (function() {
             oContent.push('[D] quick radius change ' +
                 bot.opt.radiusApproachSize + '/' + bot.opt.radiusAvoidSize);
             oContent.push('[I] auto respawn: ' + ht(window.autoRespawn));
-            oContent.push('[M] ML mode: ' + ht(bot.ML_mode));
+            oContent.push('[M] ML mode: ' + userInterface.handleMLTextColor(bot.ML_mode));
             oContent.push('[G] leaderboard overlay: ' + ht(window.leaderboard));
             oContent.push('[Y] visual debugging: ' + ht(window.visualDebugging));
             oContent.push('[U] log debugging: ' + ht(window.logDebugging));
@@ -1705,7 +1730,7 @@ var userInterface = window.userInterface = (function() {
 
             userInterface.overlays.botOverlay.innerHTML = oContent.join('<br/>');
 
-            if (window.playing && window.visualDebugging) {
+            if (window.playing && window.visualDebugging && !(bot.ML_mode == 1 || bot.ML_mode == 3)) {
                 // Only draw the goal when a bot has a goal.
                 if (window.goalCoordinates && bot.isBotEnabled) {
                     var headCoord = {
@@ -1732,19 +1757,16 @@ var userInterface = window.userInterface = (function() {
                 window.onmousemove = function() {};
                 bot.isBotRunning = true;
                 //switch between ML mode an AI mode
-                if(bot.ML_mode){
+                if(bot.ML_mode == 1){
                     bot.everyML();
-                    bot.updateLabelMap();
-                    if(window.visualDebugging){
-                        bot.drawNet();
-                    }
                     //This is how we control the amount of requests per time
                     if(bot.SEND_C % 10 == 0){
-                        //console.log("pre-post");
                         bot.sendData();
-                        //console.log("post-post");
                     }
                     bot.SEND_C++;
+                }
+                if(bot.ML_mode == 3){
+
                 }
                 else{
                     bot.go();
@@ -1807,6 +1829,24 @@ var userInterface = window.userInterface = (function() {
         handleTextColor: function(enabled) {
             return '<span style=\"color:' +
                 (enabled ? 'green;\">enabled' : 'red;\">disabled') + '</span>';
+        },
+
+        handleMLTextColor: function() {
+            var res = '<span style=\"color:';
+            switch(bot.ML_mode){
+                case 1:
+                    res = res + 'blue;\">ML server mode' + '</span>';
+                    break;
+                case 2:
+                    res = res + 'yellow;\">IL mode' + '</span>';
+                    break;
+                case 3:
+                    res = res + 'LawnGreen;\">JS ML mode' + '</span>';
+                    break;
+                default:
+                    res = res + 'red;\">disabled' + '</span>';
+            }
+            return res;
         }
     };
 })();

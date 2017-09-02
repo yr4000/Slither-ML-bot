@@ -21,6 +21,7 @@ def plot_graph(points,title,file_name):
     plt.savefig(file_name)
     plt.clf()
 
+'''
 def main():
 
     a = [77.592619047619053, 56.003, 37.111249999999998, 24.974250000000001, 33.333013513513514, 27.578368421052637,
@@ -32,3 +33,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+'''
