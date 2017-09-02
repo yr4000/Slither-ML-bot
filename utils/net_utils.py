@@ -77,9 +77,9 @@ def create_CNN():
     input_layer = tf.placeholder(tf.float32, [None,NUM_OF_FRAMES,INPUT_DIM])
 
     #CNN:
-    reshape_input = tf.reshape(input_layer, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM,NUM_OF_FRAMES])
+    reshape_input = tf.reshape(input_layer, shape=[-1, SQRT_INPUT_DIM, SQRT_INPUT_DIM, NUM_OF_FRAMES])
     #first layer: conv + pool
-    conv1 = create_conv_layer(reshape_input,'wc1',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE ,  NUM_OF_FRAMES , NUM_OF_CHANNELS_LAYER2],
+    conv1 = create_conv_layer(reshape_input,'wc1',[CONV_WINDOW_SIZE, CONV_WINDOW_SIZE , NUM_OF_FRAMES, NUM_OF_CHANNELS_LAYER2],
                               'bc1', [NUM_OF_CHANNELS_LAYER2], with_polling=True)
     #second layer: conv + pool
     conv2 = create_conv_layer(conv1,'wc2',[CONV_WINDOW_SIZE , CONV_WINDOW_SIZE , NUM_OF_CHANNELS_LAYER2, NUM_OF_CHANNELS_LAYER3],
