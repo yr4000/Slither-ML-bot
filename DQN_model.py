@@ -227,12 +227,16 @@ class Agent:
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_spacer()
 
+        #in the first epoch it runs to fast in relation to the game, so the agent can't really collect observations like this.
+        if(self.epoch_no == 0):
+            time.sleep(0.3)
+
         self.step_number += 1
 
         if(is_dead):
             wait_for_game_to_start()
 
-    #TODO: check how long this takes, and if there is a better way to do the train (currently it's an exact copy of the origin)
+    #for a mini_batch of 100 train takes about 0.25 seconds
     def train(self):
         start_time = time.time()
         # sample a mini_batch to train on
@@ -241,6 +245,7 @@ class Agent:
         previous_states = [d[self.OBS_LAST_STATE_INDEX] for d in mini_batch]
         actions = [d[self.OBS_ACTION_INDEX] for d in mini_batch]
         rewards = [d[self.OBS_REWARD_INDEX] for d in mini_batch]
+        rewards = normalize_rewards_by_max(rewards)
         current_states = [d[self.OBS_CURRENT_STATE_INDEX] for d in mini_batch]
         agents_expected_reward = []
         # this gives us the agents expected reward for each action we might
@@ -267,7 +272,7 @@ class Agent:
 
 
     def get_reward(self, raw_scores,is_dead):
-        death_punishment = -10 #TODO : i think -100 is way too high because we do not normalize rewards
+        death_punishment = -20
         no_gain_punishment = -0.05
         reward = raw_scores[-1] - raw_scores[-2]
         if(is_dead):
