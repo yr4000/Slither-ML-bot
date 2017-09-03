@@ -86,7 +86,7 @@ def get_observation():
         #print("got default data")      #todo: delte
         data = get_default_data()
         default = 1
-    return data["observation"], data["score"], data["is_dead"],data['message_id'], default, data['AI_direction'], data['AI_Acceleration']
+    return data["observation"], data["score"], data["bonus"], data["is_dead"],data['message_id'], default, data['AI_direction'], data['AI_Acceleration']
 
 #TODO: temporary solution, need to fix
 def get_default_data():
@@ -101,7 +101,8 @@ def get_default_data():
         'minutes': -1,
         'seconds': -1,
         'AI_direction': 0,
-        'AI_Acceleration': 0
+        'AI_Acceleration': 0,
+        'bonus': 0
         }
 
 #TODO: in case of failure send boolean
@@ -162,10 +163,10 @@ def check_if_died(previous_score, current_score):
     return is_dead
 
 def wait_for_game_to_start():
-    obsrv, score, is_dead, request_id, default, AI_action, AI_accel  = get_observation()
+    obsrv, score, bonus, is_dead, request_id, default, AI_action, AI_accel  = get_observation()
     while(is_dead):
         time.sleep(0.5)
-        obsrv, score, is_dead, request_id, default, AI_action, AI_accel = get_observation()
+        obsrv, score, bonus, is_dead, request_id, default, AI_action, AI_accel = get_observation()
 
 def commit_sucide():
     action = {

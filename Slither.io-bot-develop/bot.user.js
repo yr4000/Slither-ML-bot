@@ -418,6 +418,11 @@ var bot = window.bot = (function() {
         mediumFoodLabel: 150,
         largeFoodLabel: 200,
 
+        //bonus variables
+        foodsPenalty: 0,
+        enemiesPenalty: 0,
+        dCenterPenalty: 0,
+
         //TODO: ML debug vriables
         message_id: 1,
         direction: {x: 0 , y: -100},    //determains the direction of the ML_bot
@@ -983,6 +988,7 @@ var bot = window.bot = (function() {
                 hours: time.getHours(),
                 minutes: time.getMinutes(),
                 seconds: time.getSeconds(),
+                bonus: bot.getBonus()
                 /*
                 //preys: window.preys,
                 */
@@ -1025,6 +1031,10 @@ var bot = window.bot = (function() {
             bot.MAP_R = window.grd * 0.98;
             bot.MID_X = window.grd;
             bot.MID_Y = window.grd;
+            //update reward variables
+            bot.foodsPenalty = 0;
+            bot.enemiesPenalty = 0;
+            bot.dCenterPenalty = -Math.sqrt(canvasUtil.getDistance2(window.snake.xx, window.snake.yy, bot.MID_X, bot.MID_Y))*0.00005;
             bot.updateLabelMap();
             if(window.visualDebugging){
                 bot.drawNet();
@@ -1046,6 +1056,10 @@ var bot = window.bot = (function() {
             return index;
         },
 
+        getBonus: function () {
+            return bot.foodsPenalty + bot.enemiesPenalty + bot.dCenterPenalty;
+        },
+
         //This function gets the players current score
         //TODO: when dies, doesn't send the last score. fortunatlly there is a function here that does that (something with get lastScore...)
         getMyScore: function () {
@@ -1057,6 +1071,38 @@ var bot = window.bot = (function() {
             }
             return parseInt(divMyScore.children[0].children[1].innerHTML);
         },
+
+        proccessFoodsPenalty: function (arr) {
+            if(arr.length == 0){
+                return -2;
+            }
+            var max = 0;
+            var res = 0;
+            var r = Math.sqrt(Math.pow(bot.offsetSize*bot.mapSize/2,2)*2);
+            for(var i = arr.length; i--;){
+                res += (16.4*r-arr[i]);     //as far as i checked 16.4 is the maximal food size
+                if(arr[i] > max){
+                    max = arr[i];
+                }
+            }
+            return res/(max*10);
+        },
+
+        proccessEnemiesPenalty: function (arr) {
+            if(arr.length == 0){
+                return 1;
+            }
+            var min = 0;
+            var res = 0;
+            for(var i = arr.length; i--;){
+                res += arr[i];
+                if(arr[i] < min){
+                    min = arr[i];
+                }
+            }
+            return res/-(min*5);
+        },
+
 
         //creats an nXn label-map, where each pixel in it is at size offsetSize^2
         //n MUST BE EVEN!!!
@@ -1162,6 +1208,11 @@ var bot = window.bot = (function() {
         lableMapBySnakes: function(){
             var indexes = [];
             var cp = {};        //center point
+            var self = [0,0];
+            var penalties = [];
+            if(window.snake !== null && window.snake.alive_amt === 1){
+                self = [window.snake.xx, window.snake.yy];
+            }
             for (var snake = 0, ls = window.snakes.length; snake < ls; snake++) {
                 if (window.snakes[snake].id !== window.snake.id &&
                     window.snakes[snake].alive_amt === 1) {
@@ -1172,6 +1223,7 @@ var bot = window.bot = (function() {
                                 y: window.snakes[snake].pts[pt].yy,
                                 r: bot.getSnakeWidth(window.snakes[snake].sc) / 2
                             };
+
                             //appending all possible indexes
                             indexes.push(bot.getIndexFromXY(cp.x,cp.y));
                             indexes.push(bot.getIndexFromXY(cp.x + cp.r,cp.y));
@@ -1181,20 +1233,29 @@ var bot = window.bot = (function() {
 
                         }
                         for(var i = 0; i < indexes.length; i++){
-                            if (!((indexes[i] < 0) || indexes[i] > bot.mapSize**2)){
+                            if (!((indexes[i] < 0) || indexes[i] > Math.pow(bot.mapSize,2))){
                                 bot.label_map[indexes[i]] = bot.enemyLabel;
+                                if(i==0){
+                                    penalties.push(-Math.sqrt(canvasUtil.getDistance2(self[0],self[1],cp.x,cp.y)));
+                                }
                             }
                         }
                         indexes = [];
                     }
                 }
             }
+            bot.enemiesPenalty = bot.proccessEnemiesPenalty(penalties);
         },
 
         //Labels the label map according to nearby foods
         //TODO: maybe (later) we should take the distance in account
         labelMapByFoods: function () {
             var index = -1;
+            var self = [0,0];
+            var penalties = [];
+            if(window.snake !== null && window.snake.alive_amt === 1){
+                self = [window.snake.xx, window.snake.yy];
+            }
             //calculates the size of the foods near a point on label_map
             var foodSums = new Array(Math.pow(bot.mapSize,2)).fill(0);
             for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
@@ -1203,9 +1264,9 @@ var bot = window.bot = (function() {
                     continue;
                 }
                 foodSums[index] += window.foods[i].sz;
+                penalties.push(Math.sqrt(canvasUtil.getDistance2(self[0],self[1],window.foods[i].xx,window.foods[i].yy))*window.foods[i].sz);
             }
             //label each point in label_map
-
             for(i = 0; i<bot.label_map.length; i++){
                 if(foodSums[i] == 0){
                     bot.label_map[i] = bot.emptyLabel;
@@ -1221,6 +1282,7 @@ var bot = window.bot = (function() {
                     foodSums[i] = bot.largeFoodLabel;
                 }
             }
+            bot.foodsPenalty = bot.proccessFoodsPenalty(penalties);
         },
 
         //label label_map by selfs body.
@@ -1318,10 +1380,10 @@ var bot = window.bot = (function() {
             layer_defs.push({type:'conv', sx:6, filters:16, stride:1, pad:2, activation:'relu'});
             layer_defs.push({type:'pool', sx:2, stride:2});
             //conv_layer_2 + polling
-            layer_defs.push({type:'conv', sx:6, filters:32, stride:1, pad:2, activation:'relu'});
-            layer_defs.push({type:'pool', sx:2, stride:2});
+            //layer_defs.push({type:'conv', sx:6, filters:32, stride:1, pad:2, activation:'relu'});
+            //layer_defs.push({type:'pool', sx:2, stride:2});
             //fully connected layers:
-            layer_defs.push({type:'fc', num_neurons: 256, activation:'relu'});
+            //layer_defs.push({type:'fc', num_neurons: 256, activation:'relu'});
             layer_defs.push({type:'regression', num_neurons:num_actions});
             //var net = new convnetjs.Net;
             //net.makeLayers(layer_defs);
@@ -1821,6 +1883,7 @@ var userInterface = window.userInterface = (function() {
                     bot.everyML();
                     if(!bot.isJSMLInitialized){
                         //initialise bot JS ML variables:
+                        console.log("Initialized JS ML variables!");
                         bot.convNet = bot.createConvNet();
                         bot.brain = bot.createRLBrain();
                         bot.isJSMLInitialized = true;
@@ -1829,12 +1892,17 @@ var userInterface = window.userInterface = (function() {
                     bot.setDirection(action%bot.NUMBER_OF_SLICES);
                     window.setAcceleration(Math.floor(action/bot.NUMBER_OF_SLICES));
                     if(bot.counterSteps < bot.trainingSteps){
+                        if(bot.counterSteps%1000 == 0){
+                            console.log("keep training! " + bot.counterSteps + '/' + bot.trainingSteps + ' steps done!');
+                        }
                         bot.brain.backward([bot.getMyScore()]);
                         bot.counterSteps++;
                     }
                     else if(bot.counterSteps == bot.trainingSteps){
+                        console.log("finished training!");
                         bot.brain.epsilon_test_time = 0.0;
                         bot.brain.learning = false;
+                        bot.counterSteps++;
                     }
                 }
                 else{

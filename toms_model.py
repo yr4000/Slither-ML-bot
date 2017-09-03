@@ -171,7 +171,7 @@ def main():
 
         while episode_number < MAX_EPISODES:
             # get observation
-            obsrv, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
+            obsrv, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
 
             # TODO: for debug
             default_data_counter += default_obsrv

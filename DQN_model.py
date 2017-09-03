@@ -155,7 +155,7 @@ class Agent:
     # take care of the data and store it in the memory
     def take_one_step(self):
         #This part of the code processes the data
-        frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
+        frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
 
         #handaling edge cases:
         #connection problems:
@@ -291,7 +291,7 @@ class Agent:
     def evaluate(self):
         print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
         scores = []
-        frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
+        frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
         #force an ending of the game.
         #problem: in current implementation the bot dies twice...
         if(not is_dead):
@@ -300,7 +300,7 @@ class Agent:
         #run NUM_OF_GAMES_FOR_TEST of games and avarage their score
         for i in range(NUM_OF_GAMES_FOR_TEST):
             wait_for_game_to_start()
-            frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
+            frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
             state = np.stack(tuple(frame for i in range(self.FRAMES_PER_OBSERVATION)))
             while (not is_dead):
                 #feed forward pass
@@ -308,7 +308,7 @@ class Agent:
                 #choose and send action
                 send_action(np.argmax(readout_t), request_id)
                 #get next observation
-                frame, score, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
+                frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
                 state = np.append(state[1:], [frame], axis=0)
             print("just died!")
             scores.append(score)
