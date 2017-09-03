@@ -1074,7 +1074,7 @@ var bot = window.bot = (function() {
 
         proccessFoodsPenalty: function (arr) {
             if(arr.length == 0){
-                return -2;
+                return -1;
             }
             var max = 0;
             var res = 0;
@@ -1090,7 +1090,7 @@ var bot = window.bot = (function() {
 
         proccessEnemiesPenalty: function (arr) {
             if(arr.length == 0){
-                return 1;
+                return 0;
             }
             var min = 0;
             var res = 0;
