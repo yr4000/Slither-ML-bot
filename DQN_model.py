@@ -106,6 +106,7 @@ class Agent:
         #variables for evaluation:
         self.last_raw_scores = deque()
         self.last_raw_scores.append(BEGINING_SCORE)
+        self.bonus = 0
 
         #time and evaluation variables:
         self.step_number = 0
@@ -155,7 +156,7 @@ class Agent:
     # take care of the data and store it in the memory
     def take_one_step(self):
         #This part of the code processes the data
-        frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
+        frame, score, self.bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
 
         #handaling edge cases:
         #connection problems:
@@ -229,7 +230,7 @@ class Agent:
         self.step_number += 1
 
         if(is_dead):
-            wait_for_game_to_start()        #TODO: this line causes him to miss all deaths...
+            wait_for_game_to_start()
 
     #TODO: check how long this takes, and if there is a better way to do the train (currently it's an exact copy of the origin)
     def train(self):
@@ -274,7 +275,7 @@ class Agent:
         elif(reward <= 0):
             reward += no_gain_punishment
 
-        return reward
+        return reward + self.bonus
 
 
     def load_weights(self,file_name):
