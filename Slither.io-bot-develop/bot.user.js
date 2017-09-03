@@ -1289,14 +1289,29 @@ var bot = window.bot = (function() {
         //TODO: adding && !window.snake.pts[i].dying to the functions mess it up. do not use it until we know what dying means.
         labelMapBySelf: function() {
             if(window.snake !== null && window.snake.alive_amt === 1){
-                var index = -1;
+                var indexes = [];
+                var cp = {};        //center point
                 for(var i = 0; i < window.snake.pts.length; i++){
                     if(!window.snake.pts[i].dying){
-                        index = bot.getIndexFromXY(window.snake.pts[i].xx,window.snake.pts[i].yy);
-                        if(index < 0 || index > bot.mapSize**2){
-                            continue;
+                        cp = {
+                                x: window.snake.pts[i].xx,
+                                y: window.snake.pts[i].yy,
+                                r: bot.getSnakeWidth(window.snake.sc) / 2
+                            };
+
+                        //appending all possible indexes
+                        indexes.push(bot.getIndexFromXY(cp.x,cp.y));
+                        indexes.push(bot.getIndexFromXY(cp.x + cp.r,cp.y));
+                        indexes.push(bot.getIndexFromXY(cp.x - cp.r,cp.y));
+                        indexes.push(bot.getIndexFromXY(cp.x,cp.y + cp.r));
+                        indexes.push(bot.getIndexFromXY(cp.x,cp.y - cp.r));
+
+                        for(var j = 0; j < indexes.length; j++){
+                            if(indexes[j] < 0 || indexes[j] > Math.pow(bot.mapSize,2)){
+                                continue;
+                            }
+                            bot.label_map[indexes[j]] = bot.selfLabel;
                         }
-                        bot.label_map[index] = bot.selfLabel;
                     }
                 }
             }
