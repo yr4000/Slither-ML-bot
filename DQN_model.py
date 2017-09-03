@@ -228,7 +228,7 @@ class Agent:
             logger.write_spacer()
 
         #in the first epoch it runs to fast in relation to the game, so the agent can't really collect observations like this.
-        if(self.epoch_no == 0):
+        if(len(self.memory) < self.MIN_MEMORY_SIZE_FOR_TRAINING):
             time.sleep(0.3)
 
         self.step_number += 1
