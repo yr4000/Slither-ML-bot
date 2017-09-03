@@ -78,6 +78,9 @@ def decrese_rewards(rewards):
     res = np.multiply(rewards,dec_arr)
     return res
 
+def normalize_rewards_by_max(rewards):
+    return np.array(rewards)/np.max(np.abs(rewards))
+
 def get_observation():
     try:
         with open('observation.json') as json_data:
