@@ -1,6 +1,7 @@
 '''
 here will be all the functions used by the model
 '''
+from utils.plot_utils import obsrv_to_image
 
 import tensorflow as tf
 import numpy as np
@@ -180,39 +181,6 @@ def commit_sucide():
         json.dump(action, outfile)
     return True
 
-#if from some reason the the connection got lost, stops the game
-#TODO: what if the bot just went on in an empty area? technically it should change from time to time because the bot itself
-def wait_if_connection_lost(observations):
-    look_back = 10
-    do_write = True
-    if(not len(observations) < look_back):
-        last_seen = observations[-1]
-        for i in range(look_back):
-            if(last_seen != observations[-i-1]):
-                do_write = False
-
-        if(do_write):
-            data = {
-                'message_id': -1,
-                'observation': last_seen,
-                'is_dead': True,
-                'score': 10,
-                'r': 100,
-                'x': -1,
-                'y': -1,
-                'hours': -1,
-                'minutes': -1,
-                'seconds': -1,
-                'AI_direction': 0,
-                'AI_Acceleration': 0
-
-            }
-            with open('observation.json', 'w') as outfile:
-                json.dump(data, outfile)
-
-            print("I think the connection was lost...")
-            wait_for_game_to_start()
-
 def generate_alternate_states(state,number_of_frames):
     #turn frames from vectors to matrices
     state_as_matrices = \
@@ -269,8 +237,32 @@ def make_invariant_to_orientation(prev_state, action, curr_frame):
     SAS_list = list(zip(St,At,St_1))
     return(SAS_list)
 
-'''
+
 if __name__ == "__main__":
+    frame, score, bonus, is_dead, request_id, default, AI_action, AI_accel = get_observation()
+    state = np.stack(tuple(frame for i in range(FRAMES_PER_OBSERVATION)))
+    for i in range(3):
+        frame, score, bonus, is_dead, request_id, default, AI_action, AI_accel = get_observation()
+        state = np.append(state[1:], [frame], axis=0)
+        time.sleep(0.7)
+
+    frame, score, bonus, is_dead, request_id, default, AI_action, AI_accel = get_observation()
+
+    action = math.floor(np.random.uniform()*OUTPUT_DIM)
+    action = make_one_hot(action%32, action//32)
+
+    sas = make_invariant_to_orientation(state,action,frame)
+
+
+    for i in range(len(sas)):
+        for j in range(len(sas[i][2])):
+            matrix_obsrv = np.array(sas[i][2][j]).reshape(SQRT_INPUT_DIM, SQRT_INPUT_DIM)
+            obsrv_to_image(matrix_obsrv,"vers"+str(i)+"."+str(j))
+
+    actions = [np.argmax(sas[i][1])%32 for i in range(len(sas))]
+    print(actions)
+
+    '''
     s_0 = [list(range(9)) for i in range(FRAMES_PER_OBSERVATION)]
     a = make_one_hot(3,1)
     f = list(range(9,18))
@@ -283,4 +275,4 @@ if __name__ == "__main__":
         print(sas[1])
         print("s_1 is:")
         print(sas[2])
-'''
+    '''
