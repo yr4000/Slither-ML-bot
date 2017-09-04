@@ -1057,7 +1057,7 @@ var bot = window.bot = (function() {
         },
 
         getBonus: function () {
-            return bot.foodsPenalty + bot.enemiesPenalty + bot.dCenterPenalty;
+            return bot.foodsPenalty + bot.enemiesPenalty + bot.dCenterPenalty + bot.getMyScore()*0.01;
         },
 
         //This function gets the players current score
@@ -1078,7 +1078,7 @@ var bot = window.bot = (function() {
             }
             var max = 0;
             var res = 0;
-            var r = Math.sqrt(Math.pow(bot.offsetSize*bot.mapSize/2,2)*2);
+            var r = Math.sqrt(Math.pow(bot.offsetSize*bot.mapSize/2,2)*2);      //pythagoras
             for(var i = arr.length; i--;){
                 res += (16.4*r-arr[i]);     //as far as i checked 16.4 is the maximal food size
                 if(arr[i] > max){
@@ -1094,13 +1094,14 @@ var bot = window.bot = (function() {
             }
             var min = 0;
             var res = 0;
+            var r = Math.sqrt(Math.pow(bot.offsetSize*bot.mapSize/2,2)*2);
             for(var i = arr.length; i--;){
-                res += arr[i];
+                res += (arr[i] - r);
                 if(arr[i] < min){
                     min = arr[i];
                 }
             }
-            return res/-(min*5);
+            return res/-(min*2.5);
         },
 
 
@@ -1260,7 +1261,7 @@ var bot = window.bot = (function() {
             var foodSums = new Array(Math.pow(bot.mapSize,2)).fill(0);
             for (var i = 0; i < window.foods.length && window.foods[i] !== null; i++) {
                 index = bot.getIndexFromXY(window.foods[i].xx,window.foods[i].yy);
-                if(index < 0 || index > bot.mapSize**2){
+                if(index < 0 || index > Math.pow(bot.mapSize,2)){
                     continue;
                 }
                 foodSums[index] += window.foods[i].sz;
@@ -1407,7 +1408,7 @@ var bot = window.bot = (function() {
 
         //Returns the RL brain. most of this code is taken from this tutorial: http://cs.stanford.edu/people/karpathy/convnetjs/demo/rldemo.html
         createRLBrain: function () {
-            var num_inputs = bot.mapSize**2;
+            var num_inputs = Math.pow(bot.mapSize,2);
             var num_actions = bot.NUMBER_OF_SLICES*2; // number of possible directions with or withour acceleration
             var temporal_window = 0; // amount of temporal memory. 0 = agent lives in-the-moment :)
             var network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
