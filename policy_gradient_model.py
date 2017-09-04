@@ -340,7 +340,7 @@ def main():
 
                 logger.write_spacer()
 
-    plot_graph(average_scores_along_the_game,"test","test.png")
+    plot_graph(average_scores_along_the_game,"Policy Gradient Average Score During Game","PG_avg_score_during_game.png", "Epsisodes No.", "Average Score")
 
 
 
