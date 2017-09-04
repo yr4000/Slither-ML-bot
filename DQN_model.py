@@ -216,6 +216,7 @@ class Agent:
         #if the bot died restart the observation and raw_score_counting
         if(is_dead):
             print("just died!")
+            logger.write_to_log("just died!")
             self.last_state = None
             self.last_raw_scores.clear()
             self.last_raw_scores.append(BEGINING_SCORE)
@@ -260,7 +261,7 @@ class Agent:
 
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_to_log("rewards: " + str(rewards))
-            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))
+            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))   #TODO: do we update right?
 
         # learn that these actions in these states lead to this reward
         self.sess.run(self.train_operation, feed_dict={
@@ -272,7 +273,7 @@ class Agent:
 
 
     def get_reward(self, raw_scores,is_dead):
-        death_punishment = -20
+        death_punishment = -50
         no_gain_punishment = -0.05
         reward = raw_scores[-1] - raw_scores[-2]
         if(is_dead):
@@ -362,11 +363,11 @@ if __name__ == '__main__':
                 agent.save_weights(BEST_WEIGHTS)
 
         #evaluation and plotting
-        plot_graph(avg_scores_per_step ,"avg_score_per_100_steps" ,"DQN_avg_score_per_step_by_epoch_"+str(agent.epoch_no))
+        plot_graph(avg_scores_per_step ,"Average Score Per 100 Steps" ,"DQN_avg_score_per_step_by_epoch_"+str(agent.epoch_no),"Step No.", "Average score")
         avg_scores_per_epoch.append(np.average(avg_scores_per_step))
         logger.write_to_log("avg_scores_per_epoch" + str(avg_scores_per_epoch))
         logger.write_spacer()
         agent.epoch_no += 1
 
-    plot_graph(avg_scores_per_epoch,"Average Score Per Epoch", "DQN_avg_score_per_epoch_for_experiment")
+    plot_graph(avg_scores_per_epoch,"Average Score Per Epoch", "DQN_avg_score_per_epoch_for_experiment","Epoch No.", "Average score")
     print("finished experiement")
