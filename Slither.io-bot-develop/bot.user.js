@@ -1015,6 +1015,7 @@ var bot = window.bot = (function() {
                         }
                         //console.log('Got response for request id: '+data.request_id+ ' on '+time.getHours()+':'+time.getMinutes()+':'+time.getSeconds());
                         //console.log('Action chosen: ' + data.action);
+                        //console.log('do_accelerate' + data.do_accelerate);
 
                     },
                // vvv---- This is the new bit
@@ -1031,6 +1032,10 @@ var bot = window.bot = (function() {
             bot.MAP_R = window.grd * 0.98;
             bot.MID_X = window.grd;
             bot.MID_Y = window.grd;
+            //patch - zero acceleration if the snake can't accel;
+            if(bot.getMyScore() < 15){
+                window.setAcceleration(0);
+            }
             //update reward variables
             bot.foodsPenalty = 0;
             bot.enemiesPenalty = 0;
