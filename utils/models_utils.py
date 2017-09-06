@@ -16,7 +16,10 @@ SLICES_NO = 32
 FRAMES_PER_OBSERVATION = 4
 OUTPUT_DIM = 64
 INNER_INPUT_SIZE = 9
+
+
 '''
+
 #load parameters:
 with open('parameters/Policy_Gradient_Params.json') as json_data:
     PG_params = json.load(json_data)
@@ -69,7 +72,6 @@ def pick_action_uniformly(actions):
     index = math.floor(r*l)
     res = [0 if i != index else 1 for i in range(l)]
     return res
-
 
 #we assume here we get the array in the right order, so each sum is indeed being multiply with the right factor
 def decrese_rewards(rewards):
@@ -148,15 +150,6 @@ def get_reward(score_arr,is_dead):
         rewards[-1] = death_punishment
 
     return rewards
-
-def raw_score_reward(raw_score, is_dead):
-    death_punishment = -100
-
-    #punish if reward didn't change
-    if (is_dead):
-        raw_score[-1] = death_punishment
-
-    return raw_score[1:]
 
 def check_if_died(previous_score, current_score):
     delta = 25      #TODO: arbitrary value
@@ -240,7 +233,7 @@ def make_invariant_to_orientation(prev_state, action, curr_frame):
     SAS_list = list(zip(St,At,St_1))
     return(SAS_list)
 
-
+#unitest for make_invariant_to_orientation
 if __name__ == "__main__":
     frame, score, bonus, is_dead, request_id, default, AI_action, AI_accel = get_observation()
     state = np.stack(tuple(frame for i in range(FRAMES_PER_OBSERVATION)))
@@ -264,18 +257,3 @@ if __name__ == "__main__":
 
     actions = [np.argmax(sas[i][1])%32 for i in range(len(sas))]
     print(actions)
-
-    '''
-    s_0 = [list(range(9)) for i in range(FRAMES_PER_OBSERVATION)]
-    a = make_one_hot(3,1)
-    f = list(range(9,18))
-    SAS = make_invariant_to_orientation(s_0,a,f)
-    for sas in SAS:
-        print("new operation")
-        print("s_0 is:")
-        print(sas[0])
-        print("a is:")
-        print(sas[1])
-        print("s_1 is:")
-        print(sas[2])
-    '''
