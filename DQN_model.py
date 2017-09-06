@@ -4,9 +4,10 @@ http://www.danielslater.net/2016/03/deep-q-learning-pong-with-tensorflow.html
 '''
 from _lsprof import profiler_entry
 
+from utils.parameters_utils import *        #This line auto generated the parameters if they are not exist
 from utils.plot_utils import plot_graph
-from utils.net_utils import *
 from utils.models_utils import *
+from utils.net_utils import *
 from utils.log_utils import Logger
 from collections import deque
 import pickle as pkl
@@ -19,8 +20,7 @@ import tensorflow as tf
 
 #MODEL CONSTANTS
 
-VAR_NO = DQN_params['VAR_NO']  # number of Ws and bs (the variables)
-EPSILON_FOR_EXPLORATION = DQN_params['EPSILON_FOR_EXPLORATION']
+VAR_NO = DQN_params['VAR_NO']  # number of Ws and bs (the variables), number of layers X 2
 
 # Model constants
 MAX_STEPS = DQN_params['MAX_STEPS']
@@ -69,6 +69,9 @@ class Agent:
 
     #test or train mode
     TEST_MODE = DQN_params['TEST_MODE']
+    if(TEST_MODE):
+        print("Test mode!")
+        logger.write_to_log("Test mode!")
     #do learn from expert?
     LEARN_FROM_EXPERT = DQN_params['LEARN_FROM_EXPERT']
     if(LEARN_FROM_EXPERT):
@@ -117,7 +120,7 @@ class Agent:
             os.makedirs(WEIGHTS_DIR)
 
         # check if file is not empty
-        if (os.path.isfile(WEIGHTS_FILE) and DO_LOAD_WEIGHTS):
+        if (os.path.isfile(WEIGHTS_TO_LOAD) and DO_LOAD_WEIGHTS):
             self.load_weights(WEIGHTS_TO_LOAD)
 
         # creates file if it doesn't exisits:
