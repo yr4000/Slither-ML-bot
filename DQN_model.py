@@ -277,7 +277,7 @@ class Agent:
 
     def get_reward(self, raw_scores,is_dead):
         death_punishment = -50
-        no_gain_punishment = -0.05
+        no_gain_punishment = -1
         reward = raw_scores[-1] - raw_scores[-2]
         if(is_dead):
             reward = death_punishment
