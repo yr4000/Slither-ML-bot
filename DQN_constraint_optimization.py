@@ -282,7 +282,7 @@ class Agent:
             self.input_layer: previous_states,
             self.actions: actions,
             self.targets: agents_expected_reward,
-            self.lower_bounds: lower_bounds
+            self.lower_bounds: lower_bounds,
             self.upper_bounds: upper_bounds})
 
         #print("the training took {} time to run".format(time.time() - start_time))
@@ -328,7 +328,17 @@ class Agent:
                     self.memory.popleft()
 
             #init memory_buffer
-            self.memory_buffer  =deque()
+            self.memory_buffer.clear()
+
+    #this total batch size will samples_no*(2k+1)
+    def get_minibatch(self,samples_no,k):
+        minibatch = []
+        indexes = np.random.choice(len(self.memory),samples_no)
+        for index in indexes:
+            if(index < k*8 or index > len(self.memory) - k*8):      #in order to avoid fractures
+                continue
+            for i in range(-k,k+1):
+                minibatch.append(self.memory[index + i*8])
 
     def get_reward(self, raw_scores,is_dead):
         death_punishment = -50
