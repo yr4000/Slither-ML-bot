@@ -33,8 +33,8 @@ SLICES_NO = PG_params['SLICES_NO']
 OUTPUT_DIM = PG_params['OUTPUT_DIM']
 INNER_INPUT_SIZE = PG_params['INPUT_DIM']
 SQRT_INPUT_DIM = int(INNER_INPUT_SIZE**0.5)
-
 FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']
+ORIENTATION_VARIATIONS = 8
 
 def make_one_hot(index, do_accel):
     new_action = np.zeros([OUTPUT_DIM]).astype(int)
