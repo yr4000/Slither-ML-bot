@@ -272,7 +272,7 @@ class Agent:
             self.actions: actions,
             self.targets: agents_expected_reward})
 
-        #print("the training took {} time to run".format(time.time() - start_time))
+        print("the training took {} time to run".format(time.time() - start_time))
 
 
     def get_reward(self, raw_scores,is_dead):

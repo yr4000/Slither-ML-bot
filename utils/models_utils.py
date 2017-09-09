@@ -1,7 +1,7 @@
 '''
 here will be all the functions used by the model
 '''
-from utils.plot_utils import obsrv_to_image
+#from utils.plot_utils import obsrv_to_image
 
 import tensorflow as tf
 import numpy as np

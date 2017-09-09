@@ -105,8 +105,8 @@ class Agent:
         #this part is to do the train step
         #TODO: is this the correct way to do the train step? tom: i think yes
         readout_action = tf.reduce_sum(tf.multiply(self.output_layer, self.actions), reduction_indices=1)     #TODO: is this suppose to be multiply for sure, but between what?
-        lower_loss = tf.square(tf.nn.relu(lower_bounds - readout_action))
-        upper_loss = tf.square(tf.nn.relu(upper_bounds - readout_action))
+        lower_loss = tf.square(tf.nn.relu(self.lower_bounds - readout_action))
+        upper_loss = tf.square(tf.nn.relu(self.upper_bounds - readout_action))
         loss = tf.square(self.targets - readout_action)
         cost = tf.reduce_mean(loss + tf.multiply(self.PENALTY_COEFF , lower_loss) +
                               tf.multiply(self.PENALTY_COEFF, upper_loss))
@@ -211,14 +211,15 @@ class Agent:
         #do not train when testing the model
         if(not self.TEST_MODE):
             #insert observation into memory_buffer
-            self.memory_buffer.append(self.last_state , self.last_action ,self.reward, None,
-                                      current_state, is_dead)
+            self.memory_buffer.append((self.last_state , self.last_action ,reward, None,
+                                      current_state, is_dead))
             #if enough steps passed - train:
             if(len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING):
                 self.train()
 
         #if the bot died restart the observation and raw_score_counting
-        if(is_dead or self.step_number%EPISODE_SIZE)
+        if(is_dead or self.step_number%EPISODE_SIZE == 0):#TODO: think long and hard
+            self.move_buffer_to_memory()
         if(is_dead):
             print("just died!")
             logger.write_to_log("just died!")
@@ -233,7 +234,7 @@ class Agent:
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_spacer()
 
-        #in the first epoch it runs to fast in relation to the game, so the agent can't really collect observations like this.
+        #in the first epoch it runs too fast in relation to the game, so the agent can't really collect observations like this.
         if(len(self.memory) < self.MIN_MEMORY_SIZE_FOR_TRAINING):
             time.sleep(0.3)
 
@@ -242,15 +243,20 @@ class Agent:
         if(is_dead):
             wait_for_game_to_start()
 
-    #for a mini_batch of 100 train takes about 0.25 seconds
+    #for a mini_batch of 100 train takes about 0.25 seconds#TODO:check the time
     def train(self):
+        print("in train!")
         start_time = time.time()
         #make sure we have K steps back and forward
-        eligable_obs = list(self.memory)[( ((self.LOCAL_HORIZON+1) * ORIENTATION_VARIATIONS)-1) :
-                            ((self.MEMORY_SIZE - self.LOCAL_HORIZON)*ORIENTATION_VARIATIONS)]
+        eligable_obs = list(enumerate(list(self.memory)))[(self.LOCAL_HORIZON+1) * ORIENTATION_VARIATIONS :
+                            len(self.memory) - ((self.LOCAL_HORIZON+1) * ORIENTATION_VARIATIONS)]
+
         # sample a mini_batch to train on
-        mini_batch = random.sample(eligable_obs , self.MINI_BATCH_SIZE)
-        # get the batch variables
+        mini_batch_enamurated = random.sample(eligable_obs , self.MINI_BATCH_SIZE)
+
+        mini_batch = list(list(zip(*mini_batch_enamurated))[1])
+
+        # get the mini_batch variables
         previous_states = [d[self.OBS_LAST_STATE_INDEX] for d in mini_batch]
         actions = [d[self.OBS_ACTION_INDEX] for d in mini_batch]
         rewards = [d[self.OBS_REWARD_INDEX] for d in mini_batch]
@@ -258,68 +264,111 @@ class Agent:
         current_states = [d[self.OBS_CURRENT_STATE_INDEX] for d in mini_batch]
         cum_rewards = [d[self.OBS_CUM_REWARD_INDEX] for d in mini_batch]
 
+        #for each observation calc and Q(Sj,Aj)and upper\lower bounds
         lower_bounds = []
         upper_bounds = []
         agents_expected_reward = []
+        agents_reward_per_action = self.sess.run(self.output_layer,
+                                                 feed_dict={self.input_layer: current_states})
+        for j,obs in enumerate(mini_batch_enamurated):
+            # get the adjacant observations for upper and lower bounds
+            mini_batch_for_upper_bound = self.get_minibatch_upper_bound(list(obs)[0])
+            mini_batch_for_lower_bound = self.get_minibatch_lower_bound(list(obs)[0])
 
-        # this gives us the agents expected reward for each action we might
-        agents_reward_per_action = self.sess.run(self.output_layer, feed_dict={self.input_layer: current_states})
-        for j in range(len(mini_batch)):
-            self.calc_lower_bounds(j , cum_rewards)
-            if mini_batch[j][self.OBS_TERMINAL_INDEX]:
-                # this was a terminal frame so there is no future reward...
-                agents_expected_reward.append(rewards[j])
-            else:
-                agents_expected_reward.append(
-                    rewards[j] + self.FUTURE_REWARD_DISCOUNT * np.max(agents_reward_per_action[j]))
+            agents_expected_reward.append(self.calc_agent_expected_reward(
+                mini_batch,j,current_states,cum_rewards,rewards,agents_reward_per_action))
+            lower_bounds.append(self.calc_lower_bounds(mini_batch_for_lower_bound))
+            upper_bounds.append(self.calc_upper_bounds(mini_batch_for_upper_bound))
 
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_to_log("rewards: " + str(rewards))
             logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))   #TODO: do we update right?
 
-        # learn that these actions in these states lead to this reward
+        #backpropogation
         self.sess.run(self.train_operation, feed_dict={
             self.input_layer: previous_states,
             self.actions: actions,
             self.targets: agents_expected_reward,
-            self.lower_bounds: lower_bounds,
+            self.lower_bounds:lower_bounds,
             self.upper_bounds: upper_bounds})
 
-        #print("the training took {} time to run".format(time.time() - start_time))
+        print("the training took {} time to run".format(time.time() - start_time))
 
-    def calc_lower_bounds(self,j,cum_rewards,current_states):
-        #TODO:get the right ones!
-        r = np.multiply(cum_rewards[j],cum_rewards[j+1:j+self.LOCAL_HORIZON+1])
-        agents_reward_per_action = self.sess.run(self.output_layer,feed_dict=
-                                {self.input_layer: current_states[j+1:j+self.LOCAL_HORIZON+1]})
-        discount_factors = np.power(self.FUTURE_REWARD_DISCOUNT ,range(2,self.LOCAL_HORIZON+1))
-        lower_bounds = r - np.multiply(agents_reward_per_action,discount_factors)
-        return(lower_bounds)
+    def get_minibatch_upper_bound(self,j):
+        l = list(self.memory)[j - ((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS) : j+1]
+        mask = np.array(range((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS + 1))% ORIENTATION_VARIATIONS == 0
+        batch = []
+        for i,obs in enumerate(l):
+            if(mask[i]):
+                batch.append(obs)
+        return batch
 
-    def calc_upper_bounds(self,j,cum_rewards,current_states,actions):
-        #TODO:get the right ones!
-        r = np.multiply(cum_rewards[j],cum_rewards[j+1:j+self.LOCAL_HORIZON+1])
+    def get_minibatch_lower_bound(self,j):
+        l = list(self.memory)[j : j + 1 + ((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS)]
+        mask = np.array(range((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS + 1))% ORIENTATION_VARIATIONS == 0
+        batch = []
+        for i, obs in enumerate(l):
+            if(mask[i]):
+                batch.append(obs)
+        return batch
+
+    def calc_agent_expected_reward(self,mini_batch,j,current_states,cum_rewards,rewards,agents_reward_per_action):
+        if mini_batch[j][self.OBS_TERMINAL_INDEX]:
+            # this was a terminal frame so there is no future reward...
+            return (rewards[j])
+        else:
+            return(rewards[j] + self.FUTURE_REWARD_DISCOUNT * np.max(agents_reward_per_action[j]))
+
+    def calc_lower_bounds(self,batch):
+        #get the variables of the batch
+        cum_rewards = np.array([d[self.OBS_CUM_REWARD_INDEX] for d in batch])
+        current_states = np.array([d[self.OBS_CURRENT_STATE_INDEX] for d in batch])
+
+        #calculate L_max_j
+        discount_factors_1 = np.power(self.FUTURE_REWARD_DISCOUNT, range(1, self.LOCAL_HORIZON + 1))
+        r = np.multiply(cum_rewards[2:], discount_factors_1)
+        r = np.add(cum_rewards[0],-r)
         agents_reward_per_action = self.sess.run(self.output_layer,feed_dict=
-                                {self.input_layer: current_states[j+1:j+self.LOCAL_HORIZON+1]})
-        discount_factors = np.power(self.FUTURE_REWARD_DISCOUNT ,
-                                    list(reversed(range(-self.LOCAL_HORIZON-1, -2))))
-        lower_bounds = np.multiply(agents_reward_per_action,discount_factors) - r
-        return(lower_bounds)
+                                {self.input_layer: current_states[2:]})
+        #TODO:check
+        agents_max_reward_over_action = tf.reduce_max(agents_reward_per_action,reduction_indices=1)
+        discount_factors_2 = np.power(self.FUTURE_REWARD_DISCOUNT, range(2, self.LOCAL_HORIZON + 2))
+        lower_bounds = r - tf.multiply(agents_max_reward_over_action,discount_factors_2)
+        return(self.sess.run(tf.reduce_max(lower_bounds)))
+
+    def calc_upper_bounds(self,batch):
+        #get the variables of the batch
+        cum_rewards = np.array([d[self.OBS_CUM_REWARD_INDEX] for d in batch])
+        current_states = np.array([d[self.OBS_CURRENT_STATE_INDEX] for d in batch])
+        actions = np.array([d[self.OBS_ACTION_INDEX] for d in batch])
+
+        discount_factors_1 = np.power(self.FUTURE_REWARD_DISCOUNT ,(range(-self.LOCAL_HORIZON-1, -1)))
+        r = np.multiply(cum_rewards[:-2],discount_factors_1)
+        r = np.add(r,-cum_rewards[-1])
+        agents_reward_per_action = self.sess.run(self.output_layer,feed_dict=
+                                {self.input_layer: current_states[:-2]})
+        agents_reward_per_action = tf.reduce_sum(tf.multiply
+                                (agents_reward_per_action, actions[:-2]), reduction_indices=1)
+        discount_factors_2 = np.power(self.FUTURE_REWARD_DISCOUNT, (range(-self.LOCAL_HORIZON - 1, -1)))
+        upper_bounds = tf.multiply(agents_reward_per_action,discount_factors_2) - r
+        return(self.sess.run(tf.reduce_min(upper_bounds)))
 
     def move_buffer_to_memory(self):
+
+        print("in move!")
         #calc the cumulative discounted rewards for the episode:
         rewards = list(list(zip(* self.memory_buffer))[self.OBS_REWARD_INDEX])
-        cum_rewards = self.get_discounted(rewards)
+        cum_rewards = self.discount_rewards(rewards)
 
-        for OBSt in self.memory_buffer:
+        for i,OBSt in enumerate(self.memory_buffer):
             # make St,At,St+1 invariant to oreintation
             SAS_list = \
                 make_invariant_to_orientation(OBSt[self.OBS_LAST_STATE_INDEX],
                                               OBSt[self.OBS_ACTION_INDEX],
-                                              OBSt[self.OBS_CURRENT_STATE_INDEX])
+                                              OBSt[self.OBS_CURRENT_STATE_INDEX][-1])
 
             # adding observations to memory:
-            for i,sas in enumerate(SAS_list):
+            for sas in SAS_list:
                 # TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
                 self.memory.append((sas[0], sas[1], OBSt[self.OBS_REWARD_INDEX]
                                     ,cum_rewards[i], sas[2], OBSt[self.OBS_TERMINAL_INDEX]))
@@ -327,18 +376,8 @@ class Agent:
                 if (len(self.memory) > self.MEMORY_SIZE):
                     self.memory.popleft()
 
-            #init memory_buffer
-            self.memory_buffer.clear()
-
-    #this total batch size will samples_no*(2k+1)
-    def get_minibatch(self,samples_no,k):
-        minibatch = []
-        indexes = np.random.choice(len(self.memory),samples_no)
-        for index in indexes:
-            if(index < k*8 or index > len(self.memory) - k*8):      #in order to avoid fractures
-                continue
-            for i in range(-k,k+1):
-                minibatch.append(self.memory[index + i*8])
+        #clear memory_buffer
+        self.memory_buffer.clear()
 
     def get_reward(self, raw_scores,is_dead):
         death_punishment = -50
@@ -350,8 +389,9 @@ class Agent:
             reward += no_gain_punishment
 
         return reward + self.bonus
+
     #TODO:maybe use numpy?
-    def get_discounted(self,rewards):
+    def discount_rewards(self, rewards):
         # compute discounted rewards
         cumulative_discounted_rewards = np.zeros(len(rewards))
         partial_sum = 0.0
