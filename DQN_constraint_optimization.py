@@ -105,6 +105,7 @@ class Agent:
         #this part is to do the train step
         #TODO: is this the correct way to do the train step? tom: i think yes
         readout_action = tf.reduce_sum(tf.multiply(self.output_layer, self.actions), reduction_indices=1)     #TODO: is this suppose to be multiply for sure, but between what?
+        #these two losses represent the constraints
         lower_loss = tf.square(tf.nn.relu(self.lower_bounds - readout_action))
         upper_loss = tf.square(tf.nn.relu(self.upper_bounds - readout_action))
         loss = tf.square(self.targets - readout_action)
@@ -293,7 +294,7 @@ class Agent:
             self.upper_bounds: upper_bounds})
 
         print("the training took {} time to run".format(time.time() - start_time))
-
+    #get the LOCAL_HORIZON previous observations for a given observation indexed j
     def get_minibatch_upper_bound(self,j):
         l = list(self.memory)[j - ((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS) : j+1]
         mask = np.array(range((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS + 1))% ORIENTATION_VARIATIONS == 0
@@ -302,7 +303,7 @@ class Agent:
             if(mask[i]):
                 batch.append(obs)
         return batch
-
+    #get the LOCAL_HORIZON next observations for a given observation indexed j
     def get_minibatch_lower_bound(self,j):
         l = list(self.memory)[j : j + 1 + ((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS)]
         mask = np.array(range((self.LOCAL_HORIZON+1)*ORIENTATION_VARIATIONS + 1))% ORIENTATION_VARIATIONS == 0
@@ -311,7 +312,7 @@ class Agent:
             if(mask[i]):
                 batch.append(obs)
         return batch
-
+    #calculate Q_theta(Sj,Aj)
     def calc_agent_expected_reward(self,mini_batch,j,current_states,cum_rewards,rewards,agents_reward_per_action):
         if mini_batch[j][self.OBS_TERMINAL_INDEX]:
             # this was a terminal frame so there is no future reward...
@@ -319,6 +320,7 @@ class Agent:
         else:
             return(rewards[j] + self.FUTURE_REWARD_DISCOUNT * np.max(agents_reward_per_action[j]))
 
+    # calculate L_max_j for each observation
     def calc_lower_bounds(self,batch):
         #get the variables of the batch
         cum_rewards = np.array([d[self.OBS_CUM_REWARD_INDEX] for d in batch])
@@ -330,12 +332,11 @@ class Agent:
         r = np.add(cum_rewards[0],-r)
         agents_reward_per_action = self.sess.run(self.output_layer,feed_dict=
                                 {self.input_layer: current_states[2:]})
-        #TODO:check
         agents_max_reward_over_action = tf.reduce_max(agents_reward_per_action,reduction_indices=1)
         discount_factors_2 = np.power(self.FUTURE_REWARD_DISCOUNT, range(2, self.LOCAL_HORIZON + 2))
         lower_bounds = r - tf.multiply(agents_max_reward_over_action,discount_factors_2)
         return(self.sess.run(tf.reduce_max(lower_bounds)))
-
+    #calculate U_min_j for each observation
     def calc_upper_bounds(self,batch):
         #get the variables of the batch
         cum_rewards = np.array([d[self.OBS_CUM_REWARD_INDEX] for d in batch])
@@ -352,12 +353,10 @@ class Agent:
         discount_factors_2 = np.power(self.FUTURE_REWARD_DISCOUNT, (range(-self.LOCAL_HORIZON - 1, -1)))
         upper_bounds = tf.multiply(agents_reward_per_action,discount_factors_2) - r
         return(self.sess.run(tf.reduce_min(upper_bounds)))
-
+    #at the end of an episode calculates Rj for each observation and moves it to the experience replay memory
     def move_buffer_to_memory(self):
-
-        print("in move!")
-        #calc the cumulative discounted rewards for the episode:
         rewards = list(list(zip(* self.memory_buffer))[self.OBS_REWARD_INDEX])
+        #calc the cumulative discounted rewards for the episode:
         cum_rewards = self.discount_rewards(rewards)
 
         for i,OBSt in enumerate(self.memory_buffer):
@@ -389,8 +388,7 @@ class Agent:
             reward += no_gain_punishment
 
         return reward + self.bonus
-
-    #TODO:maybe use numpy?
+    #calculate the discounted cumulative rewards
     def discount_rewards(self, rewards):
         # compute discounted rewards
         cumulative_discounted_rewards = np.zeros(len(rewards))

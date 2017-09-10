@@ -6,6 +6,7 @@ from utils.log_utils import *
 from utils.plot_utils import plot_graph
 import pickle as pkl
 import os
+import time
 
 #CNN constants
 OUTPUT_DIM = PG_params['OUTPUT_DIM']
@@ -154,6 +155,7 @@ def main():
         sess.run(init)
         #sess.run(init2)     #TODO: check if this necessary
 
+
         # check if file is not empty
         if (os.path.isfile(WEIGHTS_FILE) and LOAD_WEIGHTS):
             # Load with shmickle
@@ -169,11 +171,10 @@ def main():
             open(BEST_WEIGHTS, 'a').close()
             print("created weights file sucessfully!")
 
-
         while episode_number < MAX_GAMES:
             #if reads the same state over and over we assume the connection was lost.
             #wait_if_connection_lost(states)        #TODO: this function doesn't seem to work
-
+            start_time = time.time()
             #get data and process score to reward
             obsrv, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
 
@@ -240,9 +241,8 @@ def main():
             #TODO: temporary, change to something that make sense...
             if(step_counter % STEPS_UNTIL_BACKPROP ==0):
                 update_weights = True
-
             #TODO: sleep here?
-            time.sleep(0.05)
+            time.sleep(0.25)
 
             if (is_dead or update_weights) and len(raw_scores)>2:
                 #UPDATE MODEL:
@@ -255,7 +255,7 @@ def main():
                 # TODO: for debug:
                 if(is_dead):
                     print('just died!')
-                    print("processed_rewards: " + str(processed_rewards))
+               #     print("processed_rewards: " + str(processed_rewards))
                 #logger.write_to_log("raw_score: " +str(raw_scores))
                 logger.write_to_log("processed_rewards: " + str(processed_rewards))
 
@@ -298,7 +298,6 @@ def main():
                 #evaluation:
                 current_average_score = np.average(raw_scores)
                 average_scores_along_the_game.append(current_average_score)
-                print("average score after %d steps: %f" %(step_counter, current_average_score))
                 logger.write_to_log("average score after " + str(step_counter) + ' steps: ' + str(current_average_score))
 
                 #nullify step_counter:
@@ -315,7 +314,6 @@ def main():
                     sess.run(train_step, feed_dict=grad_dict)
                     #nullify grads_sum
                     grads_sums = get_empty_grads_sums()
-
                 #TODO: we don't want to save every time we update, this is for test and will be moved
                 # evaluate and save:
                 if (best_average_score < current_average_score):
@@ -324,7 +322,7 @@ def main():
                     with open(BEST_WEIGHTS,'wb') as f:
                         pkl.dump(sess.run(tvars), f, protocol=2)
                     print('Saved best weights successfully!')
-                    print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
+                   # print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
                     logger.write_to_log('Saved best weights successfully!')
                     logger.write_to_log('Current best result for ' + str(episode_number) + ' episodes: ' + str(best_average_score))
                 # manual save
