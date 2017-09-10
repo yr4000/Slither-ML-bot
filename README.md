@@ -30,7 +30,7 @@ There are three possible machine learning mode implemented in this project. you 
 - <u>IL mode</u> - IL stands for "imitation learning". The heuristic bot is in control, but observations and chosen actions being send to your model. The idea is to allow your model to learn from an expert.
 - <u>JS ML mode</u> - This was an attempt to implement our model in javascript in order to overcome the need of server-client communication. This attempt didn't work out, but we left it for demonstration.
 
-# Possible bug
-The function getMyScore extracts an information from a <div> element, which in most browser is the 17th child of the <body> element. If that's not the case on your local browser you will see in the DQN model that the average score per epoch is always 10. simply switch the index from 17 to 16, or use the developer tools to debug it.
+## Possible bug
+The function getMyScore extracts an information from a div element, which in most browser is the 17th child of the body element. If that's not the case on your local browser you will see in the DQN model that the average score per epoch is always 10. simply switch the index from 17 to 16, or use the developer tools to debug it.
 
 Have fun!
