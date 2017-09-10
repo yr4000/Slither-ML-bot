@@ -405,7 +405,6 @@ var bot = window.bot = (function() {
         MOVEMENT_R: 100,
         SEND_C: 0,          //send counter
         ML_mode: 0,
-        //TODO: play with the offset, consider create width and length offsets
         offsetSize: 35,    //the size of each pixel in label_map is offsetSize^2
         mapSize: 24,        //The label_map size is mapSize^2
         label_map: [],      //represent devision of the game to different sectors
@@ -423,7 +422,7 @@ var bot = window.bot = (function() {
         enemiesPenalty: 0,
         dCenterPenalty: 0,
 
-        //TODO: ML debug vriables
+        //ML debug vriables
         message_id: 1,
         direction: {x: 0 , y: -100},    //determains the direction of the ML_bot
 
@@ -976,7 +975,7 @@ var bot = window.bot = (function() {
         sendData: function(){
             //console.log('Started sendData');
             bot.updateLabelMap();
-            var time = new Date();      //TODO: for debug
+            var time = new Date();      //for communication debug
             var features = {
                 AI_direction: bot.currentBotDirection,
                 AI_Acceleration: bot.currentBotAcceleration,
@@ -1167,7 +1166,6 @@ var bot = window.bot = (function() {
             var index = 0;
 
             //get my location relatively to map center
-            //TODO: why do we have to reverse the y computation all the time??
             r_location = [window.snake.xx - bot.MID_X, bot.MID_Y - window.snake.yy];
             //get teta using atan2, notice it gets the y coordinate first
             teta = Math.atan2(r_location[1],r_location[0]);
@@ -1254,7 +1252,6 @@ var bot = window.bot = (function() {
         },
 
         //Labels the label map according to nearby foods
-        //TODO: maybe (later) we should take the distance in account
         labelMapByFoods: function () {
             var index = -1;
             var self = [0,0];
@@ -1292,7 +1289,6 @@ var bot = window.bot = (function() {
         },
 
         //label label_map by selfs body.
-        //TODO: adding && !window.snake.pts[i].dying to the functions mess it up. do not use it until we know what dying means.
         labelMapBySelf: function() {
             if(window.snake !== null && window.snake.alive_amt === 1){
                 var indexes = [];
@@ -1395,19 +1391,27 @@ var bot = window.bot = (function() {
         createConvNet: function () {
             var num_actions = bot.NUMBER_OF_SLICES*2;
             var layer_defs = [];
+            layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth: bot.label_map.length});
+            layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
+            layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
+            layer_defs.push({type:'regression', num_neurons:num_actions});
+
+            //This was an attempt to create a CNN to the JS-ML code, but from some reasons it caused hugh lags
+            /*
             //input: label map, four frames
             layer_defs.push({type:'input', out_sx: bot.mapSize, out_sy: bot.mapSize, out_depth:1});
             //conv_layer_1 + polling
             layer_defs.push({type:'conv', sx:6, filters:16, stride:1, pad:2, activation:'relu'});
             layer_defs.push({type:'pool', sx:2, stride:2});
             //conv_layer_2 + polling
-            //layer_defs.push({type:'conv', sx:6, filters:32, stride:1, pad:2, activation:'relu'});
-            //layer_defs.push({type:'pool', sx:2, stride:2});
+            layer_defs.push({type:'conv', sx:6, filters:32, stride:1, pad:2, activation:'relu'});
+            layer_defs.push({type:'pool', sx:2, stride:2});
             //fully connected layers:
-            //layer_defs.push({type:'fc', num_neurons: 256, activation:'relu'});
+            layer_defs.push({type:'fc', num_neurons: 256, activation:'relu'});
             layer_defs.push({type:'regression', num_neurons:num_actions});
             //var net = new convnetjs.Net;
             //net.makeLayers(layer_defs);
+            */
             return layer_defs;
         },
 
@@ -1909,7 +1913,7 @@ var userInterface = window.userInterface = (function() {
                         bot.brain = bot.createRLBrain();
                         bot.isJSMLInitialized = true;
                     }
-                    var action = bot.brain.forward(bot.listToMatrix(bot.label_map, bot.mapSize));
+                    var action = bot.brain.forward(bot.label_map);
                     bot.setDirection(action%bot.NUMBER_OF_SLICES);
                     window.setAcceleration(Math.floor(action/bot.NUMBER_OF_SLICES));
                     if(bot.counterSteps < bot.trainingSteps){
@@ -1932,7 +1936,7 @@ var userInterface = window.userInterface = (function() {
             }
             //snake died.
             else if (bot.isBotEnabled && bot.isBotRunning) {
-                console.log('snake died');      //TODO: for debug
+                //console.log('snake died');      //for debug
                 bot.isBotRunning = false;
                 //send message 3 times:
                 for(var i=0; i<3; i++){
@@ -1947,7 +1951,6 @@ var userInterface = window.userInterface = (function() {
                 }
 
                 if (window.autoRespawn) {
-                    //TODO: put whatever you want to do before respawning - here
                     window.connect();
                 }
             }
@@ -2091,7 +2094,7 @@ var userInterface = window.userInterface = (function() {
 
     //initialzie lable map for ML mode.
     bot.restartLabelMap(bot.mapSize);
-    bot.direction = {x:0, y:-100};  //TODO:this initialization should be (also) in another place
+    bot.direction = {x:0, y:-100};  //this initialization should be (also) in another place
 
     // Start!
     userInterface.oefTimer();
