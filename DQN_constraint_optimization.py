@@ -2,8 +2,6 @@
 This code is based on the following guide (for DQN for pong) and it's code:
 http://www.danielslater.net/2016/03/deep-q-learning-pong-with-tensorflow.html
 '''
-from _lsprof import profiler_entry
-
 from utils.parameters_utils import *        #This line auto generated the parameters if they are not exist
 from utils.plot_utils import plot_graph
 from utils.models_utils import *
@@ -20,20 +18,26 @@ import tensorflow as tf
 
 #MODEL CONSTANTS
 
-VAR_NO = DQN_params['VAR_NO']  # number of Ws and bs (the variables), number of layers X 2
+if not os.path.isfile('parameters/DQN_Const_Opt_Params.json'):
+    generate_DQN_CONST_OPT_PARAMS()
+
+with open('parameters/DQN_Const_Opt_Params.json') as json_data:
+    parameters = json.load(json_data)
+
+VAR_NO = parameters['VAR_NO']  # number of Ws and bs (the variables), number of layers X 2
 
 # Model constants
-MAX_STEPS = DQN_params['MAX_STEPS']
-EPISODE_SIZE = DQN_params['EPISODE_SIZE']
-NUM_OF_EPOCHS = DQN_params['NUM_OF_EPOCHS']
-NUM_OF_GAMES_FOR_TEST = DQN_params['NUM_OF_GAMES_FOR_TEST']
+MAX_STEPS = parameters['MAX_STEPS']
+EPISODE_SIZE = parameters['EPISODE_SIZE']
+NUM_OF_EPOCHS = parameters['NUM_OF_EPOCHS']
+NUM_OF_GAMES_FOR_TEST = parameters['NUM_OF_GAMES_FOR_TEST']
 
 # Load and save constants
-WEIGHTS_FILE = DQN_params['WEIGHTS_DIR'] + DQN_params['WEIGHTS_FILE']
-BEST_WEIGHTS = DQN_params['WEIGHTS_DIR'] + DQN_params['BEST_WEIGHTS']
-DO_LOAD_WEIGHTS = DQN_params['DO_LOAD_WEIGHTS']
-WEIGHTS_DIR = DQN_params['WEIGHTS_DIR']
-WEIGHTS_TO_LOAD = DQN_params['WEIGHTS_TO_LOAD']
+WEIGHTS_FILE = parameters['WEIGHTS_DIR'] + parameters['WEIGHTS_FILE']
+BEST_WEIGHTS = parameters['WEIGHTS_DIR'] + parameters['BEST_WEIGHTS']
+DO_LOAD_WEIGHTS = parameters['DO_LOAD_WEIGHTS']
+WEIGHTS_DIR = parameters['WEIGHTS_DIR']
+WEIGHTS_TO_LOAD = parameters['WEIGHTS_TO_LOAD']
 
 #game constants:
 BEGINING_SCORE = 10
@@ -44,22 +48,22 @@ logger = Logger('DQN_test')
 class Agent:
     # agent's constants:
     #net constants
-    LEARN_RATE = DQN_params['LEARN_RATE']
+    LEARN_RATE = parameters['LEARN_RATE']
 
     #variables sizes
-    FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']      #TODO: in the original code it was 4, we need to figure out what he expected to get...
-    LAST_RAW_SCORES_SIZE = DQN_params['LAST_RAW_SCORES_SIZE'] #TODO : could be as low as 2 , but to keep a buffer
-    MEMORY_SIZE = DQN_params['MEMORY_SIZE']
+    FRAMES_PER_OBSERVATION = parameters['FRAMES_PER_OBSERVATION']
+    LAST_RAW_SCORES_SIZE = parameters['LAST_RAW_SCORES_SIZE']
+    MEMORY_SIZE = parameters['MEMORY_SIZE']
 
     #logic constants:
-    LOCAL_HORIZON =  DQN_params['LOCAL_HORIZON']
-    MIN_MEMORY_SIZE_FOR_TRAINING = DQN_params['MIN_MEMORY_SIZE_FOR_TRAINING']
-    MINI_BATCH_SIZE = DQN_params['MINI_BATCH_SIZE']
-    FUTURE_REWARD_DISCOUNT = DQN_params['FUTURE_REWARD_DISCOUNT']
-    PENALTY_COEFF = DQN_params['PENALTY_COEFF']
+    LOCAL_HORIZON =  parameters['LOCAL_HORIZON']
+    MIN_MEMORY_SIZE_FOR_TRAINING = parameters['MIN_MEMORY_SIZE_FOR_TRAINING']
+    MINI_BATCH_SIZE = parameters['MINI_BATCH_SIZE']
+    FUTURE_REWARD_DISCOUNT = parameters['FUTURE_REWARD_DISCOUNT']
+    PENALTY_COEFF = parameters['PENALTY_COEFF']
     #action constants:
-    INITIAL_RANDOM_ACTION_PROB = DQN_params['INITIAL_RANDOM_ACTION_PROB']  # starting chance of an action being random
-    FINAL_RANDOM_ACTION_PROB = DQN_params['FINAL_RANDOM_ACTION_PROB']  # final chance of an action being random
+    INITIAL_RANDOM_ACTION_PROB = parameters['INITIAL_RANDOM_ACTION_PROB']  # starting chance of an action being random
+    FINAL_RANDOM_ACTION_PROB = parameters['FINAL_RANDOM_ACTION_PROB']  # final chance of an action being random
     CONST_DECREASE_IN_EXPLORATION = \
         (INITIAL_RANDOM_ACTION_PROB-FINAL_RANDOM_ACTION_PROB)/(MAX_STEPS*NUM_OF_EPOCHS)
 
@@ -67,15 +71,15 @@ class Agent:
     OBS_LAST_STATE_INDEX, OBS_ACTION_INDEX, OBS_REWARD_INDEX,OBS_CUM_REWARD_INDEX, OBS_CURRENT_STATE_INDEX, OBS_TERMINAL_INDEX = range(6)
 
     # do write to log?
-    WRITE_TO_LOG_EVERY = DQN_params['WRITE_TO_LOG_EVERY']
+    WRITE_TO_LOG_EVERY = parameters['WRITE_TO_LOG_EVERY']
 
     #test or train mode
-    TEST_MODE = DQN_params['TEST_MODE']
+    TEST_MODE = parameters['TEST_MODE']
     if(TEST_MODE):
         print("Test mode!")
         logger.write_to_log("Test mode!")
     #do learn from expert?
-    LEARN_FROM_EXPERT = DQN_params['LEARN_FROM_EXPERT']
+    LEARN_FROM_EXPERT = parameters['LEARN_FROM_EXPERT']
     if(LEARN_FROM_EXPERT):
         print("Learn from expert mode!")
         logger.write_to_log("Learn from expert mode!")
@@ -84,7 +88,7 @@ class Agent:
         #variables to train the net
         self.sess = tf.Session()
         self.input_layer, self.output_layer = create_CNN()
-        self.actions = tf.placeholder(tf.float32, [None, OUTPUT_DIM])      #TODO: is it good it uses the output dim from the net utils?
+        self.actions = tf.placeholder(tf.float32, [None, OUTPUT_DIM])
         self.targets = tf.placeholder(tf.float32, [None])
         self.lower_bounds = tf.placeholder(tf.float32,[None])
         self.upper_bounds = tf.placeholder(tf.float32,[None])
@@ -103,8 +107,7 @@ class Agent:
         self.last_action[0] = 1
 
         #this part is to do the train step
-        #TODO: is this the correct way to do the train step? tom: i think yes
-        readout_action = tf.reduce_sum(tf.multiply(self.output_layer, self.actions), reduction_indices=1)     #TODO: is this suppose to be multiply for sure, but between what?
+        readout_action = tf.reduce_sum(tf.multiply(self.output_layer, self.actions), reduction_indices=1)
         #these two losses represent the constraints
         lower_loss = tf.square(tf.nn.relu(self.lower_bounds - readout_action))
         upper_loss = tf.square(tf.nn.relu(self.upper_bounds - readout_action))
@@ -138,7 +141,6 @@ class Agent:
             open(WEIGHTS_FILE, 'a').close()
 
     def take_action(self,request_id):
-        # TODO : how to decay is always up for debate
         #gradually desrease epsilon, in epsilon greedy policy
         if((self.probability_of_random_action > self.FINAL_RANDOM_ACTION_PROB)
            and (len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING)):
@@ -154,7 +156,7 @@ class Agent:
             action_index = random.randrange(OUTPUT_DIM)
         else:
             # choose an action given our last state
-            readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [self.last_state]})#TODO: [0]
+            readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [self.last_state]})#[0]
             if(self.step_number % self.WRITE_TO_LOG_EVERY ==0):
                 logger.write_to_log("Action Q-Values are {}".format(readout_t))
             action_index = np.argmax(readout_t)
@@ -219,7 +221,7 @@ class Agent:
                 self.train()
 
         #if the bot died restart the observation and raw_score_counting
-        if(is_dead or self.step_number%EPISODE_SIZE == 0):#TODO: think long and hard
+        if(is_dead or self.step_number%EPISODE_SIZE == 0):
             self.move_buffer_to_memory()
         if(is_dead):
             print("just died!")
@@ -244,7 +246,7 @@ class Agent:
         if(is_dead):
             wait_for_game_to_start()
 
-    #for a mini_batch of 100 train takes about 0.25 seconds#TODO:check the time
+    #for a mini_batch of 100 train takes about 0.25 seconds in a regular DQN
     def train(self):
         print("in train!")
         start_time = time.time()
@@ -261,7 +263,7 @@ class Agent:
         previous_states = [d[self.OBS_LAST_STATE_INDEX] for d in mini_batch]
         actions = [d[self.OBS_ACTION_INDEX] for d in mini_batch]
         rewards = [d[self.OBS_REWARD_INDEX] for d in mini_batch]
-        #rewards = normalize_rewards_by_max(rewards) TODO: what to do?
+        #rewards = normalize_rewards_by_max(rewards)
         current_states = [d[self.OBS_CURRENT_STATE_INDEX] for d in mini_batch]
         cum_rewards = [d[self.OBS_CUM_REWARD_INDEX] for d in mini_batch]
 
@@ -283,7 +285,7 @@ class Agent:
 
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_to_log("rewards: " + str(rewards))
-            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))   #TODO: do we update right?
+            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))
 
         #backpropogation
         self.sess.run(self.train_operation, feed_dict={
@@ -332,6 +334,7 @@ class Agent:
         r = np.add(cum_rewards[0],-r)
         agents_reward_per_action = self.sess.run(self.output_layer,feed_dict=
                                 {self.input_layer: current_states[2:]})
+
         agents_max_reward_over_action = tf.reduce_max(agents_reward_per_action,reduction_indices=1)
         discount_factors_2 = np.power(self.FUTURE_REWARD_DISCOUNT, range(2, self.LOCAL_HORIZON + 2))
         lower_bounds = r - tf.multiply(agents_max_reward_over_action,discount_factors_2)
@@ -368,7 +371,7 @@ class Agent:
 
             # adding observations to memory:
             for sas in SAS_list:
-                # TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
+                #if we get is dead for the current state, then the reward is for the action At
                 self.memory.append((sas[0], sas[1], OBSt[self.OBS_REWARD_INDEX]
                                     ,cum_rewards[i], sas[2], OBSt[self.OBS_TERMINAL_INDEX]))
                 # pop out memory:
@@ -409,34 +412,6 @@ class Agent:
             pkl.dump(self.sess.run(self.tvars), f, protocol=2)
         print("successfully saved " + file_name)
 
-    def evaluate(self):
-        print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
-        scores = []
-        frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
-        #force an ending of the game.
-        #problem: in current implementation the bot dies twice...
-        if(not is_dead):
-            commit_sucide()
-            time.sleep(0.25)
-        #run NUM_OF_GAMES_FOR_TEST of games and avarage their score
-        for i in range(NUM_OF_GAMES_FOR_TEST):
-            wait_for_game_to_start()
-            frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
-            state = np.stack(tuple(frame for i in range(self.FRAMES_PER_OBSERVATION)))
-            while (not is_dead):
-                #feed forward pass
-                readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [state]})#TODO: [0]
-                #choose and send action
-                send_action(np.argmax(readout_t), request_id)
-                #get next observation
-                frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
-                state = np.append(state[1:], [frame], axis=0)
-            print("just died!")
-            scores.append(score)
-            state = None
-
-        print("finished evaluation.")
-        return(np.average(scores))
 
 if __name__ == '__main__':
     #initialize agent
@@ -444,10 +419,6 @@ if __name__ == '__main__':
     avg_scores_per_epoch = []
     best_avg_per_step = 0
     agent = Agent()
-    #test first time with random weights for baseline
-    #print("evaluationg random movements")
-    #avg_scores_per_game.append(agent.evaluate())
-    #the division of steps to epochs is for evaluation
     print("experiment started!")
 
     while(agent.epoch_no < NUM_OF_EPOCHS):
@@ -462,14 +433,8 @@ if __name__ == '__main__':
                 avg_scores_per_step.append(np.average(agent.last_raw_scores))
                 logger.write_to_log("avg_scores_per_step" + str(avg_scores_per_step))
 
-            #TODO: is that sleep necessary??
-            if(agent.LEARN_FROM_EXPERT and agent.epoch_no == 0):
-                time.sleep(0.025)        #when learn from expert it runs really reallt fast at the first epoch
-        #avg_scores_per_game.append(agent.evaluate())
-
         #save weights and best weights:
-        #TODO: last loaded weights will be overrizde on the first save
-        #TODO: posible solution: change file names, save best score in parameters...
+        #last loaded weights will be overrizde on the first save
         if(not agent.TEST_MODE):
             agent.save_weights(WEIGHTS_FILE)
             if(avg_scores_per_step[-1] > best_avg_per_step):

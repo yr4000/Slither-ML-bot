@@ -15,7 +15,7 @@ SQRT_INPUT_DIM  = int(math.sqrt(INPUT_DIM)) #IN ORDER TO RESHAPE INTO TENSOR
 PLN = PG_params['PLN']                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = PG_params['NUM_OF_CHANNELS_LAYER1']
-NUM_OF_CHANNELS_LAYER2 = PG_params['NUM_OF_CHANNELS_LAYER2']     #TODO: Is that really what suppose to be here?
+NUM_OF_CHANNELS_LAYER2 = PG_params['NUM_OF_CHANNELS_LAYER2']
 NUM_OF_CHANNELS_LAYER3 = PG_params['NUM_OF_CHANNELS_LAYER3']
 SIZE_OF_FULLY_CONNECTED_LAYER_1 = PG_params['SIZE_OF_FULLY_CONNECTED_LAYER_1']
 SIZE_OF_FULLY_CONNECTED_LAYER_2 = PG_params['SIZE_OF_FULLY_CONNECTED_LAYER_2']
@@ -125,7 +125,7 @@ Gradients = tf.gradients(-loss,tvars)
 #from here starts update weights
 Gradients_holder = [tf.placeholder(tf.float32) for i in range(VAR_NO)]
 # then train the network - for each of the parameters do the GD as described in the HW.
-#learning_rate = tf.placeholder(tf.float32, shape=[])   #TODO: maybe use later for oprimization of the model
+#learning_rate = tf.placeholder(tf.float32, shape=[])   #TODO: maybe use later for optimization of the model
 train_step = tf.train.AdamOptimizer(1e-4).apply_gradients(zip(Gradients_holder,tvars))
 
 
@@ -140,10 +140,10 @@ def main():
     grads_sums = get_empty_grads_sums()  # initialize the gradients holder for the trainable variables
 
     #variables for debugging:
-    manual_prob_use = 0         #TODO: consider use the diffrences from 1
+    manual_prob_use = 0         #consider use the diffrences from 1
     prob_deviation_sum = 0
     default_data_counter = 0  # counts number of exceptions in reading the observations' file (and getting a default data)
-    step_counter = 0        #TODO: for tests
+    step_counter = 0        #for tests
 
     #variables for evaluation:
     best_average_score = 0
@@ -153,7 +153,7 @@ def main():
 
     with tf.Session() as sess:
         sess.run(init)
-        #sess.run(init2)     #TODO: check if this necessary
+        #sess.run(init2)     #check if this necessary
 
 
         # check if file is not empty
@@ -172,8 +172,6 @@ def main():
             print("created weights file sucessfully!")
 
         while episode_number < MAX_GAMES:
-            #if reads the same state over and over we assume the connection was lost.
-            #wait_if_connection_lost(states)        #TODO: this function doesn't seem to work
             start_time = time.time()
             #get data and process score to reward
             obsrv, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
@@ -188,13 +186,13 @@ def main():
 
             raw_scores.append(score)
 
-            # TODO: for debug
+            #FOR DEBUGGING
             #is_dead = False
             default_data_counter += default_obsrv
-            vars = sess.run(tvars)
+            #vars = sess.run(tvars)
 
             # append the relevant observation to the following action, to states
-            states.append(obsrv)        #TODO: use np.concatinate?
+            states.append(obsrv)
             # Run the policy network and get a distribution over actions
             action_probs = sess.run(actions_probs, feed_dict={observations: [obsrv]})
 
@@ -216,7 +214,8 @@ def main():
             actions_booleans.append(chosen_actions)
             # index of the selected action
             action = np.argmax(actions_booleans[-1])
-            #TODO: for debuggig
+
+            #FOR DEBUGGING
             '''
             #print("action_probs: " + str(action_probs))
             print("observation got: " + str(obsrv))
@@ -226,6 +225,7 @@ def main():
             print("default_data_counter: " + str(default_data_counter))
             print("step_counter: "+str(step_counter))
             '''
+
             if(step_counter % WRITE_TO_LOG ==0):
                 #logger.write_to_log("observation got: " + str(obsrv))
                 logger.write_to_log("action_probs: " + str(action_probs))
@@ -236,9 +236,8 @@ def main():
             send_action(action, request_id)
             # add reward to rewards for a later use in the training step
             #rewards.append(reward)
-            step_counter += 1  #TODO: this is for tests
+            step_counter += 1  #this is for tests
 
-            #TODO: temporary, change to something that make sense...
             if(step_counter % STEPS_UNTIL_BACKPROP ==0):
                 update_weights = True
             #TODO: sleep here?
@@ -252,7 +251,7 @@ def main():
                 processed_rewards = get_reward(raw_scores,is_dead)
                 #processed_rewards = raw_score_reward(raw_scores,is_dead)
 
-                # TODO: for debug:
+                #FOR DEBUGGING:
                 if(is_dead):
                     print('just died!')
                #     print("processed_rewards: " + str(processed_rewards))
@@ -276,16 +275,17 @@ def main():
                 actions_booleans = np.array(actions_booleans)
                 actions_booleans = actions_booleans == 1
 
-                #TODO: showind process results for debugging:
+                #FOR DEBUGGING:
+                '''
                 fa_res = sess.run(filtered_actions, feed_dict={observations: states, actions_mask: actions_booleans,
-                                                       rewards_arr: modified_rewards_sums})
+                                       rewards_arr: modified_rewards_sums})
                 pi_res = sess.run(pi, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
                 loss_res = sess.run(loss, feed_dict={observations: states, actions_mask: actions_booleans,
                                                        rewards_arr: modified_rewards_sums})
 
                 logger.write_to_log("filtered_actions: "+ str(fa_res))
-
+                '''
 
                 # gradients for current episode
                 grads = sess.run(Gradients, feed_dict={observations: states, actions_mask: actions_booleans,
@@ -306,7 +306,7 @@ def main():
                 # Do the training step
                 if (episode_number % BATCH_SIZE == 0):
                     #if (episode_number % WRITE_TO_LOG == 0):
-                    logger.write_to_log("learned variables: "+str(vars[0]))
+                    #logger.write_to_log("learned variables: "+str(vars[0]))
                     print("taking the update step")
                     grad_dict = {Gradients_holder[i]: grads_sums[i] for i in range(VAR_NO)}
                     #TODO choose learning rate?
@@ -314,7 +314,6 @@ def main():
                     sess.run(train_step, feed_dict=grad_dict)
                     #nullify grads_sum
                     grads_sums = get_empty_grads_sums()
-                #TODO: we don't want to save every time we update, this is for test and will be moved
                 # evaluate and save:
                 if (best_average_score < current_average_score):
                     best_average_score = current_average_score
@@ -325,6 +324,7 @@ def main():
                    # print('Current best result for %d episodes: %f.' % (episode_number, best_average_score))
                     logger.write_to_log('Saved best weights successfully!')
                     logger.write_to_log('Current best result for ' + str(episode_number) + ' episodes: ' + str(best_average_score))
+
                 # manual save
                 with open(WEIGHTS_FILE, 'wb') as f:
                     pkl.dump(sess.run(tvars), f, protocol=2)

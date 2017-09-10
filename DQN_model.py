@@ -2,7 +2,6 @@
 This code is based on the following guide (for DQN for pong) and it's code:
 http://www.danielslater.net/2016/03/deep-q-learning-pong-with-tensorflow.html
 '''
-from _lsprof import profiler_entry
 
 from utils.parameters_utils import *  #This line auto generated the parameters if they are not exist
 from utils.plot_utils import plot_graph
@@ -19,7 +18,6 @@ import tensorflow as tf
 
 
 # MODEL CONSTANTS
-
 VAR_NO = DQN_params['VAR_NO']  # number of Ws and bs (the variables), number of layers X 2
 
 # Model constants
@@ -46,8 +44,8 @@ class Agent:
     LEARN_RATE = DQN_params['LEARN_RATE']
 
     # Variables sizes
-    FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']      #TODO: in the original code it was 4, we need to figure out what he expected to get...
-    LAST_RAW_SCORES_SIZE = DQN_params['LAST_RAW_SCORES_SIZE'] #TODO : could be as low as 2 , but to keep a buffer
+    FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']
+    LAST_RAW_SCORES_SIZE = DQN_params['LAST_RAW_SCORES_SIZE']
     MEMORY_SIZE = DQN_params['MEMORY_SIZE']
 
     # Logic constants:
@@ -82,7 +80,7 @@ class Agent:
         # Variables to train the net
         self.sess = tf.Session()
         self.input_layer, self.output_layer = create_CNN()
-        self.actions = tf.placeholder(tf.float32, [None, OUTPUT_DIM])      #TODO: is it good it uses the output dim from the net utils?
+        self.actions = tf.placeholder(tf.float32, [None, OUTPUT_DIM])
         self.targets = tf.placeholder(tf.float32, [None])
         self.tvars = tf.trainable_variables()
 
@@ -98,8 +96,7 @@ class Agent:
         self.last_action[0] = 1
 
         # This part is to do the train step
-        #TODO: is this the correct way to do the train step? tom: i think yes
-        readout_action = tf.reduce_sum(tf.multiply(self.output_layer, self.actions), reduction_indices=1)     #TODO: is this suppose to be multiply for sure, but between what?
+        readout_action = tf.reduce_sum(tf.multiply(self.output_layer, self.actions), reduction_indices=1)
         cost = tf.reduce_mean(tf.square(self.targets - readout_action))
         self.train_operation = tf.train.AdamOptimizer(self.LEARN_RATE).minimize(cost)
 
@@ -128,7 +125,6 @@ class Agent:
             open(WEIGHTS_FILE, 'a').close()
 
     def take_action(self, request_id):
-        # TODO : how to decay is always up for debate
         # Gradually decrease epsilon, in epsilon greedy policy
         if((self.probability_of_random_action > self.FINAL_RANDOM_ACTION_PROB)
            and (len(self.memory) > self.MIN_MEMORY_SIZE_FOR_TRAINING)):
@@ -144,7 +140,7 @@ class Agent:
             action_index = random.randrange(OUTPUT_DIM)
         else:
             # Choose an action given our last state
-            readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [self.last_state]})#TODO: [0]
+            readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [self.last_state]})#[0]
             if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
                 logger.write_to_log("Action Q-Values are {}".format(readout_t))
             action_index = np.argmax(readout_t)
@@ -207,7 +203,6 @@ class Agent:
 
             # Adding observations to memory:
             for sas in SAS_list:
-                #TODO: currently, if we get is dead for the current state, then the reward is for the action At. I think it's fine but not sure
                 self.memory.append((sas[0], sas[1], reward, sas[2], is_dead))
                 # Pop out memory:
                 if(len(self.memory) > self.MEMORY_SIZE):
@@ -264,7 +259,7 @@ class Agent:
 
         if(self.step_number % self.WRITE_TO_LOG_EVERY == 0):
             logger.write_to_log("rewards: " + str(rewards))
-            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))   #TODO: do we update right?
+            logger.write_to_log("agents_expected_reward: " + str(agents_expected_reward))
 
         # learn that these actions in these states lead to this reward
         self.sess.run(self.train_operation, feed_dict={
@@ -272,7 +267,7 @@ class Agent:
             self.actions: actions,
             self.targets: agents_expected_reward})
 
-        print("the training took {} time to run".format(time.time() - start_time))
+        #print("the training took {} time to run".format(time.time() - start_time))
 
 
     def get_reward(self, raw_scores, is_dead):
@@ -298,34 +293,6 @@ class Agent:
             pkl.dump(self.sess.run(self.tvars), f, protocol=2)
         print("successfully saved " + file_name)
 
-    def evaluate(self):
-        print("started evaulation over {} games".format(NUM_OF_GAMES_FOR_TEST))
-        scores = []
-        frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
-        # Force an ending of the game.
-        # Problem: in current implementation the bot dies twice...
-        if(not is_dead):
-            commit_sucide()
-            time.sleep(0.25)
-        # Run NUM_OF_GAMES_FOR_TEST of games and avarage their score
-        for i in range(NUM_OF_GAMES_FOR_TEST):
-            wait_for_game_to_start()
-            frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()  # get observation
-            state = np.stack(tuple(frame for i in range(self.FRAMES_PER_OBSERVATION)))
-            while (not is_dead):
-                # Feed forward pass
-                readout_t = self.sess.run(self.output_layer, feed_dict={self.input_layer: [state]})#TODO: [0]
-                # Choose and send action
-                send_action(np.argmax(readout_t), request_id)
-                # Get next observation
-                frame, score, bonus, is_dead, request_id, default_obsrv, AI_action, AI_accel = get_observation()
-                state = np.append(state[1:], [frame], axis=0)
-            print("just died!")
-            scores.append(score)
-            state = None
-
-        print("finished evaluation.")
-        return(np.average(scores))
 
 if __name__ == '__main__':
     # Initialize agent
@@ -333,9 +300,6 @@ if __name__ == '__main__':
     avg_scores_per_epoch = []
     best_avg_per_step = 0
     agent = Agent()
-    # Test first time with random weights for baseline
-    # Print("evaluationg random movements")
-    # Avg_scores_per_game.append(agent.evaluate())
     # The division of steps to epochs is for evaluation
     print("experiment started!")
 
@@ -351,14 +315,8 @@ if __name__ == '__main__':
                 avg_scores_per_step.append(np.average(agent.last_raw_scores))
                 logger.write_to_log("avg_scores_per_step" + str(avg_scores_per_step))
 
-            #TODO: is that sleep necessary??
-            if(agent.LEARN_FROM_EXPERT and agent.epoch_no == 0):
-                time.sleep(0.025)        # When learn from expert it runs really reallt fast at the first epoch
-        # Avg_scores_per_game.append(agent.evaluate())
-
         # Save weights and best weights:
-        #TODO: last loaded weights will be overrizde on the first save
-        #TODO: posible solution: change file names, save best score in parameters...
+        #last loaded weights will be override on the first save
         if(not agent.TEST_MODE):
             agent.save_weights(WEIGHTS_FILE)
             if(avg_scores_per_step[-1] > best_avg_per_step):

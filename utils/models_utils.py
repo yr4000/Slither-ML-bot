@@ -15,14 +15,14 @@ with open('parameters/Policy_Gradient_Params.json') as json_data:
     PG_params = json.load(json_data)
 
 with open('parameters/DQN_Params.json') as json_data:
-    parameters = json.load(json_data)
+    DQN_params = json.load(json_data)
 
 
 SLICES_NO = PG_params['SLICES_NO']
 OUTPUT_DIM = PG_params['OUTPUT_DIM']
 INNER_INPUT_SIZE = PG_params['INPUT_DIM']
 SQRT_INPUT_DIM = int(INNER_INPUT_SIZE**0.5)
-FRAMES_PER_OBSERVATION = parameters['FRAMES_PER_OBSERVATION']
+FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']
 ORIENTATION_VARIATIONS = 8
 
 #Input: chosen direction from [0,OUTPUT_DIM/2], do_accel from [0,1]
