@@ -17,7 +17,7 @@ def plot_graph(points,title,file_name,xlabel,ylabel):
         os.makedirs(directory)
 
     plt.plot(points)
-    plt.title(title)  #TODO: the title should not be the same all the time but dynamic according to some parameters
+    plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     file_name = directory+file_name+ '_' + time.strftime("%d%m%Y-%H%M%S") + '.png'

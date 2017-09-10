@@ -1,5 +1,3 @@
-#TODO: currently based on yairs_model, we need to fix and organize this code
-
 from utils.models_utils import *
 from utils.reward_utils import calc_reward_from_raw
 from utils.log_utils import *
@@ -27,7 +25,7 @@ EPSILON_FOR_EXPLORATION = PG_params['EPSILON_FOR_EXPLORATION']
 
 #Model constants
 MAX_GAMES = PG_params['MAX_GAMES']
-STEPS_UNTIL_BACKPROP = PG_params['STEPS_UNTIL_BACKPROP']      #TODO: make this smaller?
+STEPS_UNTIL_BACKPROP = PG_params['STEPS_UNTIL_BACKPROP']
 BATCH_SIZE = PG_params['BATCH_SIZE']
 
 #Load and save constants
@@ -240,7 +238,7 @@ def main():
 
             if(step_counter % STEPS_UNTIL_BACKPROP ==0):
                 update_weights = True
-            #TODO: sleep here?
+            #So the model won't read the same frame many times
             time.sleep(0.25)
 
             if (is_dead or update_weights) and len(raw_scores)>2:
