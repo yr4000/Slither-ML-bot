@@ -12,9 +12,9 @@ For further information, it is recommended to read the mini-article and the bot 
 
 ## Prerequisites and Installation
 - python (python 3.5 is recommended)
-- The following python packages: Tensorflow, Flask, Flask-CORS, Numpy, Matplotlib, Spicy (the last three are included in Anaconda)
+- The following python packages: Tensorflow, Flask, Flask-CORS, Numpy, Matplotlib, Scipy (the last three are included in Anaconda)
 
-To install the bot please follow the "README" of the original bot: https://github.com/ErmiyaEskandary/Slither.io-bot
+To install the bot please follow the "README" of the original bot: https://github.com/ErmiyaEskandary/Slither.io-bot,
 Then please follow our bot manual to install our javascript code.
 
 ## Usage
