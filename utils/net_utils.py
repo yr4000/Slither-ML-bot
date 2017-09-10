@@ -14,7 +14,7 @@ SQRT_INPUT_DIM  = int(INPUT_DIM**0.5)
 PLN = CNN_params['PLN']                     #Pool Layers Number
 CONV_WINDOW_SIZE = int(SQRT_INPUT_DIM / 2**PLN)
 NUM_OF_CHANNELS_LAYER1 = CNN_params['NUM_OF_CHANNELS_LAYER1']
-NUM_OF_CHANNELS_LAYER2 = CNN_params['NUM_OF_CHANNELS_LAYER2']      #TODO: Is the value 16 really what suppose to be here?
+NUM_OF_CHANNELS_LAYER2 = CNN_params['NUM_OF_CHANNELS_LAYER2']
 NUM_OF_CHANNELS_LAYER3 = CNN_params['NUM_OF_CHANNELS_LAYER3']
 SIZE_OF_FULLY_CONNECTED_LAYER_1 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_1']
 SIZE_OF_FULLY_CONNECTED_LAYER_2 = CNN_params['SIZE_OF_FULLY_CONNECTED_LAYER_2']
@@ -43,7 +43,7 @@ def maxpool2d(x):
     #                        size of window         movement of window
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-#TODO: is that initializer fine?
+
 def InitializeVarXavier(var_name,var_shape):
     return tf.get_variable(name=var_name, shape=var_shape, dtype= tf.float32,
                     initializer=tf.contrib.layers.xavier_initializer())
@@ -101,7 +101,7 @@ def create_CNN():
     w_out, b_out = create_weights_and_biases('wout',[SIZE_OF_FINAL_FC, OUTPUT_DIM], 'bout', [OUTPUT_DIM] )
     score = tf.matmul(fc, w_out) + b_out
 
-    #TODO: in DQN we calculate the expected reward, and in the examples I saw they didn't softmax the result
+    #in DQN we calculate the expected reward. In models where the policy is calculated, remove this code from remark.
     #actions_probs = tf.nn.softmax(score)
 
     return input_layer, score

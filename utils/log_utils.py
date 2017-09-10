@@ -31,34 +31,3 @@ class Logger:
     def write_spacer (self):
         logging.basicConfig(format='%(asctime)s-%(levelname)s: %(message)s', filename=self.file_name, level=logging.DEBUG)
         logging.info("\n" + SPACER)
-
-
-'''
-#This is  tester.
-if __name__ == '__main__':
-	L = Logger('yair')
-	L.write_spacer()
-	L.write_to_log('write me down', type='info')
-	L.write_to_log('write me d', type='error')
-	L.write_to_log('write me do', type='warning')
-'''
-
-
-###!!!CODE FROM HERE ON IS FOR DEBUGGING PURPOSES ONLY!!!###	
-#LOGGER.mylogger('my message is da best')
-#mylogger_spacer()
-#LOGGER.mylogger('my message is da best')
-#mylogger_spacer()
-#LOGGER.mylogger('my message is da best')
-#mylogger_spacer()
-#LOGGER.mylogger('my message is da best')
-#mylogger_spacer()
-
-#for i in range(10):
-#	LOGGER.mylogger('love is in the air')
-#	if (i%2):
-#		LOGGER.mylogger('bytwo', type='warning')
-#	elif (i%3):
-#		LOGGER.mylogger('bythree', type='error')
-#	elif (i%5):
-#		LOGGER.mylogger('byfive', type='infffo')

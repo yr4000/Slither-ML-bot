@@ -1,5 +1,5 @@
 '''
-here will be all the functions used by the model
+here will be all the functions used by the models
 '''
 #from utils.plot_utils import obsrv_to_image
 
@@ -10,47 +10,38 @@ import json
 import time
 from datetime import datetime
 
-#when doing unit test parameter loading fails
-'''
-SLICES_NO = 32
-FRAMES_PER_OBSERVATION = 4
-OUTPUT_DIM = 64
-INNER_INPUT_SIZE = 9
-
-
-'''
-
 #load parameters:
 with open('parameters/Policy_Gradient_Params.json') as json_data:
     PG_params = json.load(json_data)
 
 with open('parameters/DQN_Params.json') as json_data:
-    DQN_params = json.load(json_data)
+    parameters = json.load(json_data)
 
 
-DO_NOTHING, MOVE_RIGHT, MOVE_LEFT = 0, 1, 2
 SLICES_NO = PG_params['SLICES_NO']
 OUTPUT_DIM = PG_params['OUTPUT_DIM']
 INNER_INPUT_SIZE = PG_params['INPUT_DIM']
 SQRT_INPUT_DIM = int(INNER_INPUT_SIZE**0.5)
-FRAMES_PER_OBSERVATION = DQN_params['FRAMES_PER_OBSERVATION']
+FRAMES_PER_OBSERVATION = parameters['FRAMES_PER_OBSERVATION']
 ORIENTATION_VARIATIONS = 8
 
+#Input: chosen direction from [0,OUTPUT_DIM/2], do_accel from [0,1]
+#Output: one hot vector representing the chosen action
 def make_one_hot(index, do_accel):
     new_action = np.zeros([OUTPUT_DIM]).astype(int)
     action_index = index + do_accel *SLICES_NO
     new_action[action_index] = 1
     return new_action
 
-
-#TODO: is it fine that this function is here?
-#TODO: fix according to Carmels version
+#TODO: This function works fine but it's not accurate since it returns a [0]*VAR_NO array instead zero array in the trainable variables dimension. We abandoned this function since we stop working with it.
 def get_empty_grads_sums():
     grads_sums = tf.trainable_variables()
     for i, val in enumerate(grads_sums):
         grads_sums[i] = 0
     return grads_sums
 
+#This function is a manual implementation of np.random.multinomial,
+#since the last function may crush if the vector it gets sums to a value greater than 1.
 def pick_random_action_manually(actions):
     r = 1
     while(r==1):
@@ -64,6 +55,7 @@ def pick_random_action_manually(actions):
         res = [0 if i != index else 1 for i in range(l)]
     return res
 
+#picks action randomly from a uniform distribution.
 def pick_action_uniformly(actions):
     r = 1
     while(r==1):
@@ -83,18 +75,18 @@ def decrese_rewards(rewards):
 def normalize_rewards_by_max(rewards):
     return np.array(rewards)/np.max(np.abs(rewards))
 
+#get's the observation written to the file
 def get_observation():
     try:
         with open('observation.json') as json_data:
             data = json.load(json_data)
         default = 0
     except:
-        #print("got default data")      #todo: delte
         data = get_default_data()
         default = 1
     return data["observation"], data["score"], data["bonus"], data["is_dead"],data['message_id'], default, data['AI_direction'], data['AI_Acceleration']
 
-#TODO: temporary solution, need to fix
+#in case the function above failed to read from the file
 def get_default_data():
     return {
         'observation': [0 for i in range(INNER_INPUT_SIZE)],
@@ -111,12 +103,10 @@ def get_default_data():
         'bonus': 0
         }
 
-#TODO: in case of failure send boolean
 def send_action(index, request_id):
     action = choose_action(index,request_id)
     with open('action.json', 'w') as outfile:
         json.dump(action, outfile)
-    return True
 
 #input: 0 <= index < 2*SLICES_NO
 #the cast to int is needed because numpy types can't be converted to json:
@@ -137,7 +127,7 @@ def get_reward(score_arr,is_dead):
     death_punishment = -100
 
     if(len(score_arr) == 1):
-        return np.array([0]) # worst case TODO : i think should never happen im model
+        return np.array([0]) # worst case
 
     rewards = np.diff(score_arr).astype(np.float32)    #convert raw score to points earned/lost per step
 
@@ -151,20 +141,23 @@ def get_reward(score_arr,is_dead):
 
     return rewards
 
+#This function seems to work but also doesn't completely solves the missing deaths issue.
 def check_if_died(previous_score, current_score):
-    delta = 25      #TODO: arbitrary value
+    delta = 25      #arbitrary value
     is_dead = previous_score - current_score > delta
     if(is_dead):
         print("I think the bot died and we missed it.")
         print("current score: " + str(current_score) + ", previous score: " + str(previous_score))
     return is_dead
 
+#If the bot died this function waits for a new game to start.
 def wait_for_game_to_start():
     obsrv, score, bonus, is_dead, request_id, default, AI_action, AI_accel  = get_observation()
     while(is_dead):
         time.sleep(0.5)
         obsrv, score, bonus, is_dead, request_id, default, AI_action, AI_accel = get_observation()
 
+#if you want to force the game to end you can use this function.
 def commit_sucide():
     action = {
         'action': 0,
@@ -177,6 +170,7 @@ def commit_sucide():
         json.dump(action, outfile)
     return True
 
+#This function genereates additional observation from the original observation, to augment the possible data the model can learn from.
 def generate_alternate_states(state,number_of_frames):
     #turn frames from vectors to matrices
     state_as_matrices = \
@@ -203,6 +197,7 @@ def generate_alternate_states(state,number_of_frames):
     state_list = [list(t)for t in state_list]
     return state_list
 
+#This function generates actions from the original chosen action, compatible to the additional observations above
 def generate_alternate_actions(action_index):
     action_list = []
     action_list.append(action_index)
@@ -215,6 +210,8 @@ def generate_alternate_actions(action_index):
     action_list.append((SLICES_NO/4 - action_index) % SLICES_NO)
     return action_list
 
+#Input: previous state, chosen action, current frame
+#Output: list with the original transition and 7 additional transitions the model can learn from
 def make_invariant_to_orientation(prev_state, action, curr_frame):
     #generate all alternate orientation states
     St = generate_alternate_states(prev_state,FRAMES_PER_OBSERVATION)
@@ -249,11 +246,10 @@ if __name__ == "__main__":
 
     sas = make_invariant_to_orientation(state,action,frame)
 
-
     for i in range(len(sas)):
         for j in range(len(sas[i][2])):
             matrix_obsrv = np.array(sas[i][2][j]).reshape(SQRT_INPUT_DIM, SQRT_INPUT_DIM)
-            obsrv_to_image(matrix_obsrv,"vers"+str(i)+"."+str(j))
+            #obsrv_to_image(matrix_obsrv,"vers"+str(i)+"."+str(j))
 
     actions = [np.argmax(sas[i][1])%32 for i in range(len(sas))]
     print(actions)
